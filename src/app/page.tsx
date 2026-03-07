@@ -21,7 +21,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { ChevronDown, Github, Globe, Box } from "lucide-react";
+import { ChevronDown, Github, Globe, Box, ChevronUp } from "lucide-react";
+import { ScrollToTop } from "~/components/ScrollToTop";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 
@@ -541,6 +542,7 @@ const Homepage: NextPage = () => {
           <span>© {new Date().getFullYear()} CodePulse</span>
           <span>Built with ♥ for developers</span>
         </motion.footer>
+        <ScrollToTop />
       </div>
     </>
   );
