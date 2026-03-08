@@ -123,6 +123,7 @@ export const repository = createTable(
 		fullName: text("full_name").notNull(),
 		owner: text("owner").notNull(),
 		name: text("name").notNull(),
+		url: text("url"),
 		githubRepoId: text("github_repo_id"),
 		defaultBranch: text("default_branch"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })

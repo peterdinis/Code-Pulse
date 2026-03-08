@@ -15,6 +15,23 @@ export const prReviewRouter = createTRPCRouter({
 			});
 		}),
 
+	listByRepositoryId: publicProcedure
+		.input(
+			z.object({
+				userId: z.string().min(1),
+				repositoryId: z.string().min(1),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			return ctx.db.query.prReview.findMany({
+				where: and(
+					eq(prReview.userId, input.userId),
+					eq(prReview.repositoryId, input.repositoryId)
+				),
+				orderBy: (r, { desc }) => [desc(r.createdAt)],
+			});
+		}),
+
 	create: publicProcedure
 		.input(
 			z.object({

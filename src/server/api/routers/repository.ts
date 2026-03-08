@@ -22,6 +22,7 @@ export const repositoryRouter = createTRPCRouter({
 				fullName: z.string().min(1),
 				owner: z.string().min(1),
 				name: z.string().min(1),
+				url: z.string().url().optional().or(z.literal("")),
 				githubRepoId: z.string().optional(),
 				defaultBranch: z.string().optional(),
 			})
@@ -34,6 +35,7 @@ export const repositoryRouter = createTRPCRouter({
 				fullName: input.fullName,
 				owner: input.owner,
 				name: input.name,
+				url: (input.url && input.url.length > 0 ? input.url : null) ?? null,
 				githubRepoId: input.githubRepoId ?? null,
 				defaultBranch: input.defaultBranch ?? null,
 			});
