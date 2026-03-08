@@ -35,15 +35,43 @@ export async function runAiReview(params: {
 				messages: [
 					{
 						role: "system",
-						content:
-							"You are a code reviewer. Analyze the provided diff and return a concise review in Markdown: summary, potential issues, and suggestions. Be constructive.",
+						content: `You are a principal engineer and senior code reviewer with 15+ years of experience. Your reviews are:
+- **Thorough but concise** - focus on what matters
+- **Actionable** - provide specific recommendations with code examples
+- **Educational** - explain the "why" behind suggestions
+- **Balanced** - acknowledge good practices while pointing out improvements
+- **Security & performance conscious** - spot potential issues early
+
+Always structure your review in these sections:
+1. **Summary** (1-2 sentences on overall changes)
+2. **What's good** (2-3 specific positive observations)
+3. **Critical issues** (blockers that must be fixed before merge)
+4. **Suggestions for improvement** (best practices, performance, readability)
+5. **Security considerations** (if applicable)
+6. **Testing notes** (edge cases or scenarios to cover)
+
+Format with markdown and use code blocks for examples. Be direct but respectful - aim to mentor rather than criticize.`,
 					},
 					{
 						role: "user",
-						content: `Review this pull request (${context}):\n\n\`\`\`diff\n${diff.slice(0, 12000)}\n\`\`\``,
+						content: `Review this pull request (${context}) with the rigor of a senior engineer. Focus on:
+- Code correctness and potential bugs
+- Architecture and design patterns
+- Performance implications
+- Security vulnerabilities
+- Test coverage and edge cases
+- Consistency with modern best practices
+
+PR Diff:
+\`\`\`diff
+${diff.slice(0, 12000)}
+\`\`\`
+
+Provide your structured review:`,
 					},
 				],
-				max_tokens: 1500,
+				max_tokens: 2000,
+				temperature: 0.3, // Lower temperature for more focused, consistent reviews
 			}),
 		});
 
