@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { ChevronDown, Github, Globe, Box, ChevronUp } from "lucide-react";
 import { ScrollToTop } from "~/components/ScrollToTop";
+import { SignInWithGitHubButton } from "~/components/SignInWithGitHubButton";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 
@@ -361,16 +362,14 @@ const Homepage: NextPage = () => {
               animate="visible"
               variants={staggerContainer}
             >
-              <motion.a
-                href="/api/auth/github"
-                className="inline-flex items-center gap-2.5 px-6 py-3 bg-white text-[#0a0c0f] rounded-md text-[13px] md:text-[14px] font-bold transition-all duration-150 shadow-none hover:shadow-[0_6px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5"
-                variants={fadeUp as unknown as Variants}
-                custom={0.4}
-                whileTap={{ scale: 0.97 }}
-              >
-                <Github className="w-5 h-5" />
-                Continue with GitHub
-              </motion.a>
+              <motion.div variants={fadeUp as unknown as Variants} custom={0.4}>
+                <SignInWithGitHubButton
+                  className="inline-flex items-center gap-2.5 px-6 py-3 bg-white text-[#0a0c0f] rounded-md text-[13px] md:text-[14px] font-bold transition-all duration-150 shadow-none hover:shadow-[0_6px_24px_rgba(255,255,255,0.15)] hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.97]"
+                >
+                  <Github className="w-5 h-5" />
+                  Continue with GitHub
+                </SignInWithGitHubButton>
+              </motion.div>
               <motion.a
                 href="#features"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-transparent text-[#6e7681] border border-[#1e2733] rounded-md text-[13px] md:text-[14px] transition-all hover:border-[#00e5a0] hover:text-[#00e5a0]"
@@ -517,18 +516,20 @@ const Homepage: NextPage = () => {
           >
             Free for open-source projects. No credit card required. Connect your GitHub account and your first review happens in under 60 seconds.
           </motion.p>
-          <motion.a
-            href="/api/auth/github"
-            className="inline-flex items-center gap-3 px-8 py-3.5 bg-white text-[#0a0c0f] rounded-lg text-sm md:text-base font-bold transition-all duration-300 shadow-none hover:shadow-[0_8px_28px_rgba(255,255,255,0.18)] hover:scale-105 relative z-10"
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.35, type: "spring", stiffness: 200 }}
-            whileTap={{ scale: 0.97 }}
+            className="relative z-10"
           >
-            <GithubIcon />
-            Start Free with GitHub
-          </motion.a>
+            <SignInWithGitHubButton
+              className="inline-flex items-center gap-3 px-8 py-3.5 bg-white text-[#0a0c0f] rounded-lg text-sm md:text-base font-bold transition-all duration-300 shadow-none hover:shadow-[0_8px_28px_rgba(255,255,255,0.18)] hover:scale-105 active:scale-[0.97]"
+            >
+              <GithubIcon />
+              Start Free with GitHub
+            </SignInWithGitHubButton>
+          </motion.div>
         </motion.section>
 
         {/* ── FOOTER ── */}
@@ -567,15 +568,17 @@ function SignInDropdown() {
           </DropdownMenuLabel>
 
           <DropdownMenuItem className="focus:bg-[#151b24] focus:text-white rounded-lg transition-colors cursor-pointer outline-none p-0">
-            <a href="/api/auth/github" className="flex items-center gap-3 px-3 py-2.5 group w-full">
-              <div className="w-7 h-7 bg-[#24292e] rounded-md flex items-center justify-center">
+            <SignInWithGitHubButton
+              className="flex items-center gap-3 px-3 py-2.5 group w-full text-left bg-transparent border-none cursor-pointer"
+            >
+              <div className="w-7 h-7 bg-[#24292e] rounded-md flex items-center justify-center shrink-0">
                 <GithubIcon />
               </div>
               <div className="flex flex-col">
                 <span className="text-[13px] font-semibold text-white">GitHub</span>
                 <span className="text-[10px] text-[#6e7681]">github.com</span>
               </div>
-            </a>
+            </SignInWithGitHubButton>
           </DropdownMenuItem>
 
           <DropdownMenuItem className="focus:bg-[#151b24] focus:text-white rounded-lg transition-colors cursor-pointer outline-none p-0">

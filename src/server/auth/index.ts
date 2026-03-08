@@ -21,7 +21,12 @@ export const auth = betterAuth({
   socialProviders: {
     github: {
       clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+      scope: ["user:email"],
+      overrideUserInfoOnSignIn: true,
+      mapProfileToUser: (profile) => ({
+        emailVerified: true
+      })
     }
   },
   session: {
