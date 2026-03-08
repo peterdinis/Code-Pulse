@@ -1,5 +1,6 @@
 import { repositoryRouter } from "~/server/api/routers/repository";
 import { prReviewRouter } from "~/server/api/routers/prReview";
+import { notificationRouter } from "~/server/api/routers/notification";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -10,6 +11,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
 	repository: repositoryRouter,
 	prReview: prReviewRouter,
+	notification: notificationRouter,
 });
 
 // export type definition of API

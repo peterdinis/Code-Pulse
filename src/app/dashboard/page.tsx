@@ -16,8 +16,12 @@ import {
   FileCheck,
   Trash2,
   ExternalLink,
+  X,
+  Sparkles,
+  FileDiff,
 } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import { NotificationBell } from "~/components/NotificationBell";
 
 type DashboardSection = "repositories" | "reviews" | "include-repo" | "new-review";
 
@@ -25,6 +29,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [section, setSection] = useState<DashboardSection>("repositories");
+  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isPending && !session?.user) {
@@ -142,13 +147,29 @@ export default function DashboardPage() {
               {section === "new-review" && "New PR review"}
             </h1>
           </div>
+          <NotificationBell userId={userId} />
         </header>
 
-        <main className="flex-1 overflow-auto p-6 md:p-10">
-          {section === "repositories" && (
-            <RepositoriesSection userId={userId} />
+        <main className="flex-1 overflow-auto p-6 md:p-10 relative">
+          {selectedReviewId && (
+            <ReviewDetailPanel
+              reviewId={selectedReviewId}
+              userId={userId}
+              onClose={() => setSelectedReviewId(null)}
+            />
           )}
-          {section === "reviews" && <ReviewsSection userId={userId} />}
+          {section === "repositories" && (
+            <RepositoriesSection
+              userId={userId}
+              onSelectReview={setSelectedReviewId}
+            />
+          )}
+          {section === "reviews" && (
+            <ReviewsSection
+              userId={userId}
+              onSelectReview={setSelectedReviewId}
+            />
+          )}
           {section === "include-repo" && (
             <IncludeRepositorySection userId={userId} />
           )}
@@ -161,7 +182,13 @@ export default function DashboardPage() {
   );
 }
 
-function RepositoriesSection({ userId }: { userId: string }) {
+function RepositoriesSection({
+  userId,
+  onSelectReview,
+}: {
+  userId: string;
+  onSelectReview: (id: string) => void;
+}) {
   const { data: repos, isLoading } = api.repository.list.useQuery({ userId });
   const utils = api.useUtils();
   const remove = api.repository.remove.useMutation({
@@ -230,7 +257,12 @@ function RepositoriesSection({ userId }: { userId: string }) {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-            <RepoReviews userId={userId} repositoryId={repo.id} repoName={repo.fullName} />
+            <RepoReviews
+              userId={userId}
+              repositoryId={repo.id}
+              repoName={repo.fullName}
+              onSelectReview={onSelectReview}
+            />
           </li>
         );
       })}
@@ -242,10 +274,12 @@ function RepoReviews({
   userId,
   repositoryId,
   repoName,
+  onSelectReview,
 }: {
   userId: string;
   repositoryId: string;
   repoName: string;
+  onSelectReview: (id: string) => void;
 }) {
   const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery({
     userId,
@@ -267,7 +301,7 @@ function RepoReviews({
       ) : (
         <ul className="space-y-2">
           {(reviews ?? []).map((r) => (
-            <ReviewCard key={r.id} review={r} />
+            <ReviewCard key={r.id} review={r} onView={() => onSelectReview(r.id)} />
           ))}
         </ul>
       )}
@@ -291,7 +325,13 @@ type ReviewRecord = {
   summary: string | null;
 };
 
-function ReviewCard({ review }: { review: ReviewRecord }) {
+function ReviewCard({
+  review,
+  onView,
+}: {
+  review: ReviewRecord;
+  onView?: () => void;
+}) {
   const statusStyle = REVIEW_STATUS_STYLES[review.status] ?? "bg-muted text-muted-foreground border-border";
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:border-primary/20 transition-colors">
@@ -322,16 +362,31 @@ function ReviewCard({ review }: { review: ReviewRecord }) {
           </a>
         )}
         {review.summary && (
-          <p className="mt-2 text-[13px] text-muted-foreground leading-relaxed">
+          <p className="mt-2 text-[13px] text-muted-foreground leading-relaxed line-clamp-2">
             {review.summary}
           </p>
+        )}
+        {onView && (
+          <button
+            type="button"
+            onClick={onView}
+            className="mt-2 text-[12px] text-primary font-medium hover:underline"
+          >
+            View diff & AI review →
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-function ReviewsSection({ userId }: { userId: string }) {
+function ReviewsSection({
+  userId,
+  onSelectReview,
+}: {
+  userId: string;
+  onSelectReview: (id: string) => void;
+}) {
   const { data: reviews, isLoading } = api.prReview.list.useQuery({ userId });
 
   if (isLoading) {
@@ -354,7 +409,7 @@ function ReviewsSection({ userId }: { userId: string }) {
     <ul className="space-y-3">
       {reviews.map((review) => (
         <li key={review.id}>
-          <ReviewCard review={review} />
+          <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
         </li>
       ))}
     </ul>
@@ -585,6 +640,150 @@ function NewReviewSection({ userId }: { userId: string }) {
           {create.isPending ? "Creating…" : "Create PR review"}
         </button>
       </form>
+    </div>
+  );
+}
+
+function ReviewDetailPanel({
+  reviewId,
+  userId,
+  onClose,
+}: {
+  reviewId: string;
+  userId: string;
+  onClose: () => void;
+}) {
+  const { data: review, isLoading } = api.prReview.getById.useQuery(
+    { id: reviewId, userId },
+    { enabled: !!reviewId }
+  );
+  const utils = api.useUtils();
+  const [diffText, setDiffText] = useState("");
+
+  const updateDiff = api.prReview.updateDiff.useMutation({
+    onSuccess: () => {
+      utils.prReview.getById.invalidate({ id: reviewId, userId });
+      toast.success("Diff saved");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const runAi = api.prReview.runAiReview.useMutation({
+    onSuccess: () => {
+      utils.prReview.getById.invalidate({ id: reviewId, userId });
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      utils.notification.list.invalidate();
+      utils.notification.unreadCount.invalidate();
+      toast.success("AI review completed. Check notifications.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    if (review?.diffText != null) setDiffText(review.diffText ?? "");
+  }, [review?.diffText]);
+
+  if (isLoading || !review) {
+    return (
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <p className="text-muted-foreground text-sm">Loading review…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl border-l border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+      <div className="shrink-0 flex items-center justify-between gap-4 p-4 border-b border-border bg-muted/30">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-foreground truncate">
+            PR #{review.prNumber}
+            {review.prTitle ? ` — ${review.prTitle}` : ""}
+          </h2>
+          {review.prUrl && (
+            <a
+              href={review.prUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open PR
+            </a>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <section>
+          <div className="flex items-center gap-2 mb-2">
+            <FileDiff className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
+              Diff (paste your changes here)
+            </h3>
+          </div>
+          <textarea
+            value={diffText}
+            onChange={(e) => setDiffText(e.target.value)}
+            placeholder="Paste git diff or patch content…"
+            className="w-full h-40 px-3 py-2 rounded-lg bg-background border border-input text-foreground text-[13px] font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[120px]"
+            spellCheck={false}
+          />
+          <button
+            type="button"
+            onClick={() =>
+              updateDiff.mutate({ id: reviewId, userId, diffText })
+            }
+            disabled={updateDiff.isPending}
+            className="mt-2 px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 disabled:opacity-50"
+          >
+            {updateDiff.isPending ? "Saving…" : "Save diff"}
+          </button>
+        </section>
+
+        <section>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
+              AI review
+            </h3>
+          </div>
+          <p className="text-[13px] text-muted-foreground mb-2">
+            Run AI analysis on the diff above. When finished, you’ll get a
+            notification.
+          </p>
+          <button
+            type="button"
+            onClick={() => runAi.mutate({ id: reviewId, userId })}
+            disabled={runAi.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+          >
+            <Sparkles className="w-4 h-4" />
+            {runAi.isPending ? "Running AI review…" : "Run AI review"}
+          </button>
+        </section>
+
+        {review.aiReview && (
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-2">
+              AI review result
+            </h3>
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <pre className="text-[13px] text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+                {review.aiReview}
+              </pre>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
