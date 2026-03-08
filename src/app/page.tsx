@@ -21,9 +21,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { ChevronDown, Github, Globe, Box, ChevronUp } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, Github, Globe, Box, ChevronUp, LayoutDashboard } from "lucide-react";
 import { ScrollToTop } from "~/components/ScrollToTop";
 import { SignInWithGitHubButton } from "~/components/SignInWithGitHubButton";
+import { useSession } from "~/lib/client";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 
@@ -302,7 +304,7 @@ const Homepage: NextPage = () => {
             ))}
           </motion.ul>
 
-          <SignInDropdown />
+          <NavAuthActions />
         </motion.nav>
 
         {/* ── HERO ── */}
@@ -549,9 +551,33 @@ const Homepage: NextPage = () => {
   );
 };
 
-// ── Sign-in dropdown ─────────────────────────────────────────────────────────
+// ── Nav: Sign-in vs Dashboard (podľa session) ────────────────────────────────
 
+function NavAuthActions() {
+  const { data: session, isPending } = useSession();
 
+  if (isPending) {
+    return (
+      <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-md text-[13px] text-[#6e7681] animate-pulse">
+        …
+      </div>
+    );
+  }
+
+  if (session?.user) {
+    return (
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2.5 px-4 py-2 bg-white text-[#0a0c0f] rounded-md text-[13px] font-bold transition-all hover:scale-105 active:scale-[0.97] hover:shadow-[0_4px_16px_rgba(255,255,255,0.12)]"
+      >
+        <LayoutDashboard className="w-4 h-4" />
+        Go to dashboard
+      </Link>
+    );
+  }
+
+  return <SignInDropdown />;
+}
 
 function SignInDropdown() {
   return (
