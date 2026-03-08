@@ -15,6 +15,13 @@
       "when": 1772964757660,
       "tag": "0001_nappy_ma_gnuci",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772967093653,
+      "tag": "0002_talented_ken_ellis",
+      "breakpoints": true
     }
   ]
 }

@@ -191,7 +191,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 	}),
 }));
 
-export const repositoryRelations = relations(repository, ({ one }) => ({
+export const repositoryRelations = relations(repository, ({ one, many }) => ({
 	user: one(user, {
 		fields: [repository.userId],
 		references: [user.id],
