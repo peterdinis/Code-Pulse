@@ -2,26 +2,39 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
 import { env } from "~/env";
+import * as schema from "../db/schema";
+
+const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
+const githubCallbackURL =
+  env.GITHUB_CALLBACK_URL?.replace(/\/$/, "") ??
+  `${baseURL}/api/auth/callback/github`;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: {
-      user: db.query.user,
-      session: db.query.session,
-      account: db.query.account,
-      verification: db.query.verification
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification
     }
   }),
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  baseURL,
+  basePath: "/api/auth",
   emailAndPassword: {
     enabled: true
   },
   socialProviders: {
     github: {
       clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+      redirectURI: githubCallbackURL,
+      scope: ["user:email"],
+      overrideUserInfoOnSignIn: true,
+      mapProfileToUser: (profile) => ({
+        emailVerified: true
+      })
     }
   },
   session: {
