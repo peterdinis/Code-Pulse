@@ -113,9 +113,68 @@ export const verification = createTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const repository = createTable(
+	"repository",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		fullName: text("full_name").notNull(),
+		owner: text("owner").notNull(),
+		name: text("name").notNull(),
+		githubRepoId: text("github_repo_id"),
+		defaultBranch: text("default_branch"),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => [
+		index("repository_userId_idx").on(table.userId),
+		index("repository_fullName_idx").on(table.fullName),
+	]
+);
+
+export const prReview = createTable(
+	"pr_review",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		repositoryId: text("repository_id").references(() => repository.id, {
+			onDelete: "set null",
+		}),
+		prNumber: integer("pr_number").notNull(),
+		prUrl: text("pr_url"),
+		prTitle: text("pr_title"),
+		status: text("status", { enum: ["pending", "in_progress", "completed", "failed"] })
+			.default("pending")
+			.notNull(),
+		summary: text("summary"),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => [
+		index("pr_review_userId_idx").on(table.userId),
+		index("pr_review_repositoryId_idx").on(table.repositoryId),
+	]
+);
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
+	repositories: many(repository),
+	prReviews: many(prReview),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -129,5 +188,24 @@ export const accountRelations = relations(account, ({ one }) => ({
 	user: one(user, {
 		fields: [account.userId],
 		references: [user.id],
+	}),
+}));
+
+export const repositoryRelations = relations(repository, ({ one }) => ({
+	user: one(user, {
+		fields: [repository.userId],
+		references: [user.id],
+	}),
+	prReviews: many(prReview),
+}));
+
+export const prReviewRelations = relations(prReview, ({ one }) => ({
+	user: one(user, {
+		fields: [prReview.userId],
+		references: [user.id],
+	}),
+	repository: one(repository, {
+		fields: [prReview.repositoryId],
+		references: [repository.id],
 	}),
 }));
