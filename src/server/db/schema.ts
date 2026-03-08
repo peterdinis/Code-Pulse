@@ -157,6 +157,8 @@ export const prReview = createTable(
 			.default("pending")
 			.notNull(),
 		summary: text("summary"),
+		diffText: text("diff_text"),
+		aiReview: text("ai_review"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -171,11 +173,34 @@ export const prReview = createTable(
 	]
 );
 
+export const notification = createTable(
+	"notification",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		type: text("type").notNull(),
+		title: text("title").notNull(),
+		body: text("body"),
+		relatedId: text("related_id"),
+		readAt: integer("read_at", { mode: "timestamp_ms" }),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(table) => [
+		index("notification_userId_idx").on(table.userId),
+		index("notification_readAt_idx").on(table.readAt),
+	]
+);
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
 	repositories: many(repository),
 	prReviews: many(prReview),
+	notifications: many(notification),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -208,5 +233,12 @@ export const prReviewRelations = relations(prReview, ({ one }) => ({
 	repository: one(repository, {
 		fields: [prReview.repositoryId],
 		references: [repository.id],
+	}),
+}));
+
+export const notificationRelations = relations(notification, ({ one }) => ({
+	user: one(user, {
+		fields: [notification.userId],
+		references: [user.id],
 	}),
 }));

@@ -1,6 +1,4 @@
 import "~/styles/globals.css";
-
-
 import type { Metadata } from "next";
 import { Geist, Inter } from "next/font/google";
 
