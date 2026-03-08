@@ -15,6 +15,27 @@
       "when": 1772964757660,
       "tag": "0001_nappy_ma_gnuci",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772967093653,
+      "tag": "0002_talented_ken_ellis",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1772968012512,
+      "tag": "0003_add-repo-url",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1772969164146,
+      "tag": "0004_ai-review-diff-notifications",
+      "breakpoints": true
     }
   ]
 }

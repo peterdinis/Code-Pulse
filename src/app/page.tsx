@@ -25,6 +25,7 @@ import Link from "next/link";
 import { ChevronDown, Github, Globe, Box, ChevronUp, LayoutDashboard } from "lucide-react";
 import { ScrollToTop } from "~/components/ScrollToTop";
 import { SignInWithGitHubButton } from "~/components/SignInWithGitHubButton";
+import { ThemeToggle } from "~/components/ThemeToggle";
 import { useSession } from "~/lib/client";
 
 // ── Animation variants ──────────────────────────────────────────────────────
@@ -304,7 +305,10 @@ const Homepage: NextPage = () => {
             ))}
           </motion.ul>
 
-          <NavAuthActions />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <NavAuthActions />
+          </div>
         </motion.nav>
 
         {/* ── HERO ── */}
