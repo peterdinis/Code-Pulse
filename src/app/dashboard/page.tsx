@@ -1006,8 +1006,20 @@ function ReviewDetailPanel({
     { id: reviewId, userId },
     { enabled: !!reviewId, throwOnError: true },
   );
+  const { data: aiUsage } = api.prReview.getAiReviewUsage.useQuery(
+    { userId },
+    { enabled: !!userId },
+  );
   const utils = api.useUtils();
   const [diffText, setDiffText] = useState("");
+  const [limitInput, setLimitInput] = useState("");
+
+  const setLimit = api.prReview.setAiReviewLimit.useMutation({
+    onSuccess: () => {
+      utils.prReview.getAiReviewUsage.invalidate({ userId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const updateDiff = api.prReview.updateDiff.useMutation({
     onSuccess: () => {
@@ -1022,6 +1034,7 @@ function ReviewDetailPanel({
       utils.prReview.getById.invalidate({ id: reviewId, userId });
       utils.prReview.list.invalidate();
       utils.prReview.listByRepositoryId.invalidate();
+      utils.prReview.getAiReviewUsage.invalidate({ userId });
       utils.notification.list.invalidate();
       utils.notification.unreadCount.invalidate();
       toast.success("AI review completed.");
@@ -1171,14 +1184,82 @@ function ReviewDetailPanel({
           <p className="text-[13px] text-muted-foreground">
             Run AI analysis on the diff. You’ll get a notification when it’s done.
           </p>
+          {/* AI review limit */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+            <p className="text-[12px] font-medium text-foreground">
+              AI review limit (optional)
+            </p>
+            <p className="text-[12px] text-muted-foreground">
+              Set a limit (e.g. 5). After that many completed AI reviews, the button is disabled until you increase the limit or clear it.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                placeholder={aiUsage?.limit?.toString() ?? "No limit"}
+                value={limitInput}
+                onChange={(e) => setLimitInput(e.target.value)}
+                className="w-20 px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground text-[13px] focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const v = limitInput.trim();
+                  const num = v ? Number.parseInt(v, 10) : null;
+                  if (v && (Number.isNaN(num) || num < 1 || num > 1000)) {
+                    toast.error("Enter a number between 1 and 1000");
+                    return;
+                  }
+                  setLimit.mutate({ userId, limit: num ?? null });
+                  setLimitInput("");
+                }}
+                disabled={setLimit.isPending}
+                className="px-3 py-1.5 rounded-md bg-muted text-foreground text-[13px] font-medium hover:bg-muted/80 disabled:opacity-50"
+              >
+                {setLimit.isPending ? "Saving…" : "Set limit"}
+              </button>
+              {aiUsage && aiUsage.limit != null && (
+                <>
+                  <span className="text-[12px] text-muted-foreground">
+                    Used: <strong className="text-foreground">{aiUsage.used}</strong> / {aiUsage.limit}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setLimit.mutate({ userId, limit: null })}
+                    disabled={setLimit.isPending}
+                    className="text-[12px] text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    Clear limit
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          {aiUsage && aiUsage.limit != null && aiUsage.used >= aiUsage.limit && (
+            <p className="text-[12px] text-destructive">
+              Limit reached. Increase the limit above to run more AI reviews.
+            </p>
+          )}
           <button
             type="button"
             onClick={() => runAi.mutate({ id: reviewId, userId })}
-            disabled={runAi.isPending}
+            disabled={
+              runAi.isPending ||
+              (aiUsage != null &&
+                aiUsage.limit != null &&
+                aiUsage.used >= aiUsage.limit)
+            }
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             <Sparkles className="w-4 h-4" />
-            {runAi.isPending ? "Running AI review…" : "Run AI review"}
+            {runAi.isPending
+              ? "Running AI review…"
+              : aiUsage != null &&
+                  aiUsage.limit != null &&
+                  aiUsage.used >= aiUsage.limit
+                ? "Run AI review (limit reached)"
+                : "Run AI review"}
           </button>
         </section>
 
