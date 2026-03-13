@@ -28,21 +28,16 @@ import { ClientOnly } from "~/components/ClientOnly";
 import { DiffViewer } from "~/components/DiffViewer";
 import { MarkdownReview } from "~/components/MarkdownReview";
 import { PaginationBar } from "~/components/PaginationBar";
+import { LoadingScreen } from "~/components/LoadingScreen";
 
 type DashboardSection = "repositories" | "reviews" | "include-repo" | "new-review";
-
-const DashboardLoading = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <p className="text-muted-foreground text-sm">Loading…</p>
-  </div>
-);
 
 function RedirectToHome() {
   const router = useRouter();
   useEffect(() => {
     router.replace("/");
   }, [router]);
-  return <DashboardLoading />;
+  return <LoadingScreen label="Redirecting…" />;
 }
 
 export default function DashboardPage() {
@@ -52,9 +47,9 @@ export default function DashboardPage() {
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
   return (
-    <ClientOnly fallback={<DashboardLoading />}>
+    <ClientOnly fallback={<LoadingScreen label="Loading dashboard…" />}>
       {isPending ? (
-        <DashboardLoading />
+        <LoadingScreen label="Loading dashboard…" />
       ) : !session?.user ? (
         <RedirectToHome />
       ) : (
