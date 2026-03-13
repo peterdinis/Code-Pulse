@@ -22,8 +22,25 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { NotificationBell } from "~/components/NotificationBell";
+import { ClientOnly } from "~/components/ClientOnly";
+import { DiffViewer } from "~/components/DiffViewer";
+import { MarkdownReview } from "~/components/MarkdownReview";
 
 type DashboardSection = "repositories" | "reviews" | "include-repo" | "new-review";
+
+const DashboardLoading = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <p className="text-muted-foreground text-sm">Loading…</p>
+  </div>
+);
+
+function RedirectToHome() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
+  return <DashboardLoading />;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -31,26 +48,41 @@ export default function DashboardPage() {
   const [section, setSection] = useState<DashboardSection>("repositories");
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isPending && !session?.user) {
-      router.replace("/");
-    }
-  }, [session, isPending, router]);
+  return (
+    <ClientOnly fallback={<DashboardLoading />}>
+      {isPending ? (
+        <DashboardLoading />
+      ) : !session?.user ? (
+        <RedirectToHome />
+      ) : (
+        <DashboardContent
+          userId={session.user.id}
+          section={section}
+          setSection={setSection}
+          selectedReviewId={selectedReviewId}
+          setSelectedReviewId={setSelectedReviewId}
+          session={session}
+        />
+      )}
+    </ClientOnly>
+  );
+}
 
-  if (isPending) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Loading…</p>
-      </div>
-    );
-  }
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const userId = session.user.id;
-
+function DashboardContent({
+  userId,
+  section,
+  setSection,
+  selectedReviewId,
+  setSelectedReviewId,
+  session,
+}: {
+  userId: string;
+  section: DashboardSection;
+  setSection: (s: DashboardSection) => void;
+  selectedReviewId: string | null;
+  setSelectedReviewId: (id: string | null) => void;
+  session: { user: { email?: string | null } };
+}) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans antialiased flex">
       {/* Sidebar */}
@@ -188,6 +220,7 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+    </ClientOnly>
   );
 }
 
@@ -671,6 +704,35 @@ function NewReviewSection({
   );
 }
 
+function ReviewDetailPanelSkeleton() {
+  return (
+    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl border-l border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+      <div className="shrink-0 flex items-center justify-between gap-4 p-4 border-b border-border bg-muted/30">
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="h-5 w-48 rounded-md bg-muted animate-pulse" />
+          <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+        </div>
+        <div className="h-9 w-9 rounded-lg bg-muted animate-pulse shrink-0" />
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="space-y-2">
+          <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+          <div className="h-36 rounded-lg bg-muted/50 animate-pulse" />
+          <div className="h-9 w-24 rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+          <div className="h-10 w-full rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+          <div className="h-48 rounded-lg bg-muted/30 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReviewDetailPanel({
   reviewId,
   userId,
@@ -682,7 +744,7 @@ function ReviewDetailPanel({
 }) {
   const { data: review, isLoading } = api.prReview.getById.useQuery(
     { id: reviewId, userId },
-    { enabled: !!reviewId }
+    { enabled: !!reviewId },
   );
   const utils = api.useUtils();
   const [diffText, setDiffText] = useState("");
@@ -702,7 +764,7 @@ function ReviewDetailPanel({
       utils.prReview.listByRepositoryId.invalidate();
       utils.notification.list.invalidate();
       utils.notification.unreadCount.invalidate();
-      toast.success("AI review completed. Check notifications.");
+      toast.success("AI review completed.");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -713,26 +775,51 @@ function ReviewDetailPanel({
 
   if (isLoading || !review) {
     return (
-      <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-        <p className="text-muted-foreground text-sm">Loading review…</p>
+      <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm">
+        <ReviewDetailPanelSkeleton />
       </div>
     );
   }
 
+  const statusLabel =
+    review.status === "in_progress"
+      ? "Running…"
+      : review.status === "completed"
+        ? "Completed"
+        : review.status === "failed"
+          ? "Failed"
+          : "Pending";
+
   return (
     <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl border-l border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+      {/* Header */}
       <div className="shrink-0 flex items-center justify-between gap-4 p-4 border-b border-border bg-muted/30">
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-foreground truncate">
-            PR #{review.prNumber}
-            {review.prTitle ? ` — ${review.prTitle}` : ""}
-          </h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground truncate">
+              PR #{review.prNumber}
+              {review.prTitle ? ` — ${review.prTitle}` : ""}
+            </h2>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                review.status === "completed"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : review.status === "in_progress"
+                    ? "bg-primary/15 text-primary"
+                    : review.status === "failed"
+                      ? "bg-destructive/15 text-destructive"
+                      : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {statusLabel}
+            </span>
+          </div>
           {review.prUrl && (
             <a
               href={review.prUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+              className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Open PR
@@ -750,13 +837,17 @@ function ReviewDetailPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <FileDiff className="w-4 h-4 text-primary" />
+        {/* Diff input */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <FileDiff className="w-4 h-4 text-primary shrink-0" />
             <h3 className="text-sm font-semibold text-foreground">
-              Diff (paste your changes here)
+              Diff
             </h3>
           </div>
+          <p className="text-[13px] text-muted-foreground">
+            Paste your git diff or patch below, then save. Use &quot;Run AI review&quot; to analyze.
+          </p>
           <textarea
             value={diffText}
             onChange={(e) => setDiffText(e.target.value)}
@@ -764,49 +855,58 @@ function ReviewDetailPanel({
             className="w-full h-40 px-3 py-2 rounded-lg bg-background border border-input text-foreground text-[13px] font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[120px]"
             spellCheck={false}
           />
-          <button
-            type="button"
-            onClick={() =>
-              updateDiff.mutate({ id: reviewId, userId, diffText })
-            }
-            disabled={updateDiff.isPending}
-            className="mt-2 px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 disabled:opacity-50"
-          >
-            {updateDiff.isPending ? "Saving…" : "Save diff"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                updateDiff.mutate({ id: reviewId, userId, diffText })
+              }
+              disabled={updateDiff.isPending || diffText === (review.diffText ?? "")}
+              className="px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 disabled:opacity-50 disabled:pointer-events-none transition-opacity"
+            >
+              {updateDiff.isPending ? "Saving…" : "Save diff"}
+            </button>
+            {diffText.trim() && (
+              <div className="text-[12px] text-muted-foreground">
+                Preview:
+              </div>
+            )}
+          </div>
+          {diffText.trim() && (
+            <DiffViewer content={diffText} className="max-h-48 overflow-y-auto" />
+          )}
         </section>
 
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-primary" />
+        {/* Run AI */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary shrink-0" />
             <h3 className="text-sm font-semibold text-foreground">
               AI review
             </h3>
           </div>
-          <p className="text-[13px] text-muted-foreground mb-2">
-            Run AI analysis on the diff above. When finished, you’ll get a
-            notification.
+          <p className="text-[13px] text-muted-foreground">
+            Run AI analysis on the diff. You’ll get a notification when it’s done.
           </p>
           <button
             type="button"
             onClick={() => runAi.mutate({ id: reviewId, userId })}
             disabled={runAi.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             <Sparkles className="w-4 h-4" />
             {runAi.isPending ? "Running AI review…" : "Run AI review"}
           </button>
         </section>
 
+        {/* AI result */}
         {review.aiReview && (
-          <section>
-            <h3 className="text-sm font-semibold text-foreground mb-2">
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">
               AI review result
             </h3>
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <pre className="text-[13px] text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                {review.aiReview}
-              </pre>
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+              <MarkdownReview content={review.aiReview} />
             </div>
           </section>
         )}
