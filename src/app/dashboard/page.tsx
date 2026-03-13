@@ -202,6 +202,7 @@ function DashboardContent({
           {section === "reviews" && (
             <ReviewsSection
               userId={userId}
+              selectedReviewId={selectedReviewId}
               onSelectReview={setSelectedReviewId}
             />
           )}
@@ -259,6 +260,15 @@ function RepositoriesSection({
       utils.repository.list.invalidate();
       toast.success("Repository removed");
     },
+    onError: (err) => toast.error(err.message ?? "Failed to remove repository"),
+  });
+  const removeReview = api.prReview.remove.useMutation({
+    onSuccess: () => {
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      toast.success("PR review removed");
+    },
+    onError: (err) => toast.error(err.message ?? "Failed to remove PR review"),
   });
 
   const repos = data?.items ?? [];
@@ -363,7 +373,8 @@ function RepositoriesSection({
                     <button
                       type="button"
                       onClick={() => remove.mutate({ id: repo.id, userId })}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      disabled={remove.isPending}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 disabled:opacity-50"
                       title="Remove repository"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -374,6 +385,7 @@ function RepositoriesSection({
                     repositoryId={repo.id}
                     repoName={repo.fullName}
                     onSelectReview={onSelectReview}
+                    onDeleteReview={(reviewId) => removeReview.mutate({ id: reviewId, userId })}
                   />
                 </li>
               );
@@ -406,11 +418,13 @@ function RepoReviews({
   repositoryId,
   repoName,
   onSelectReview,
+  onDeleteReview,
 }: {
   userId: string;
   repositoryId: string;
   repoName: string;
   onSelectReview: (id: string) => void;
+  onDeleteReview: (reviewId: string) => void;
 }) {
   const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery(
     { userId, repositoryId },
@@ -432,7 +446,12 @@ function RepoReviews({
       ) : (
         <ul className="space-y-2">
           {(reviews ?? []).map((r) => (
-            <ReviewCard key={r.id} review={r} onView={() => onSelectReview(r.id)} />
+            <ReviewCard
+              key={r.id}
+              review={r}
+              onView={() => onSelectReview(r.id)}
+              onDelete={() => onDeleteReview(r.id)}
+            />
           ))}
         </ul>
       )}
@@ -459,9 +478,11 @@ type ReviewRecord = {
 function ReviewCard({
   review,
   onView,
+  onDelete,
 }: {
   review: ReviewRecord;
   onView?: () => void;
+  onDelete?: () => void;
 }) {
   const statusStyle = REVIEW_STATUS_STYLES[review.status] ?? "bg-muted text-muted-foreground border-border";
   return (
@@ -497,15 +518,26 @@ function ReviewCard({
             {review.summary}
           </p>
         )}
-        {onView && (
-          <button
-            type="button"
-            onClick={onView}
-            className="mt-2 text-[12px] text-primary font-medium hover:underline"
-          >
-            View diff & AI review →
-          </button>
-        )}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {onView && (
+            <button
+              type="button"
+              onClick={onView}
+              className="text-[12px] text-primary font-medium hover:underline"
+            >
+              View diff & AI review →
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-[12px] text-destructive font-medium hover:underline"
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -522,15 +554,30 @@ const REVIEW_STATUS_OPTIONS = [
 
 function ReviewsSection({
   userId,
+  selectedReviewId,
   onSelectReview,
 }: {
   userId: string;
-  onSelectReview: (id: string) => void;
+  selectedReviewId: string | null;
+  onSelectReview: (id: string | null) => void;
 }) {
   const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const utils = api.useUtils();
+  const remove = api.prReview.remove.useMutation({
+    onSuccess: (_data, variables) => {
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      if (variables.id === selectedReviewId) {
+        onSelectReview(null);
+      }
+      toast.success("PR review removed");
+    },
+    onError: (err) => toast.error(err.message ?? "Failed to remove PR review"),
+  });
 
   const { data, isLoading } = api.prReview.list.useQuery(
     {
@@ -633,7 +680,11 @@ function ReviewsSection({
           <ul className="space-y-3">
             {reviews.map((review) => (
               <li key={review.id}>
-                <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
+                <ReviewCard
+                  review={review}
+                  onView={() => onSelectReview(review.id)}
+                  onDelete={() => remove.mutate({ id: review.id, userId })}
+                />
               </li>
             ))}
           </ul>
@@ -804,11 +855,15 @@ function NewReviewSection({
     e.preventDefault();
     const num = parseInt(prNumber, 10);
     if (Number.isNaN(num) || num < 1) return;
+    let url: string | undefined = prUrl.trim() || undefined;
+    if (url && !/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+    }
     create.mutate({
       userId,
       repositoryId: repositoryId || undefined,
       prNumber: num,
-      prUrl: prUrl.trim() || undefined,
+      prUrl: url,
       prTitle: prTitle.trim() || undefined,
     });
   };
@@ -974,6 +1029,17 @@ function ReviewDetailPanel({
     onError: (e) => toast.error(e.message),
   });
 
+  const remove = api.prReview.remove.useMutation({
+    onSuccess: () => {
+      utils.prReview.getById.invalidate();
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      toast.success("PR review removed");
+      onClose();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   useEffect(() => {
     if (review?.diffText != null) setDiffText(review.diffText ?? "");
   }, [review?.diffText]);
@@ -1031,14 +1097,26 @@ function ReviewDetailPanel({
             </a>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => remove.mutate({ id: reviewId, userId })}
+            disabled={remove.isPending}
+            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+            aria-label="Delete review"
+            title="Delete PR review"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">

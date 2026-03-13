@@ -119,7 +119,7 @@ export const prReviewRouter = createTRPCRouter({
 				userId: z.string().min(1),
 				repositoryId: z.string().optional(),
 				prNumber: z.number().int().positive(),
-				prUrl: z.string().url().optional(),
+				prUrl: z.string().optional().transform((v) => (v?.trim() ? v.trim() : undefined)),
 				prTitle: z.string().optional(),
 			})
 		)
@@ -136,6 +136,21 @@ export const prReviewRouter = createTRPCRouter({
 				status: "pending",
 			});
 			return { id };
+		}),
+
+	remove: publicProcedure
+		.input(z.object({ id: z.string().min(1), userId: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			revalidateTag("pr-review-list");
+			await ctx.db
+				.delete(prReview)
+				.where(
+					and(
+						eq(prReview.id, input.id),
+						eq(prReview.userId, input.userId),
+					),
+				);
+			return { ok: true };
 		}),
 
 	updateStatus: publicProcedure
