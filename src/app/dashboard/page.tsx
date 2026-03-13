@@ -414,7 +414,7 @@ function RepoReviews({
 }) {
   const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery(
     { userId, repositoryId },
-    { staleTime: 60 * 1000, gcTime: 5 * 60 * 1000 },
+    { staleTime: 60 * 1000, gcTime: 5 * 60 * 1000, throwOnError: true },
   );
 
   if (isLoading) return null;
@@ -949,7 +949,7 @@ function ReviewDetailPanel({
 }) {
   const { data: review, isLoading } = api.prReview.getById.useQuery(
     { id: reviewId, userId },
-    { enabled: !!reviewId },
+    { enabled: !!reviewId, throwOnError: true },
   );
   const utils = api.useUtils();
   const [diffText, setDiffText] = useState("");
