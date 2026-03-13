@@ -171,10 +171,19 @@ export default function DashboardPage() {
             />
           )}
           {section === "include-repo" && (
-            <IncludeRepositorySection userId={userId} />
+          <IncludeRepositorySection
+            userId={userId}
+            onDone={() => setSection("repositories")}
+          />
           )}
           {section === "new-review" && (
-            <NewReviewSection userId={userId} />
+          <NewReviewSection
+            userId={userId}
+            onCreated={(id) => {
+              setSection("reviews");
+              setSelectedReviewId(id);
+            }}
+          />
           )}
         </main>
       </div>
@@ -416,7 +425,13 @@ function ReviewsSection({
   );
 }
 
-function IncludeRepositorySection({ userId }: { userId: string }) {
+function IncludeRepositorySection({
+  userId,
+  onDone,
+}: {
+  userId: string;
+  onDone: () => void;
+}) {
   const [fullName, setFullName] = useState("");
   const [url, setUrl] = useState("");
   const [defaultBranch, setDefaultBranch] = useState("main");
@@ -426,7 +441,8 @@ function IncludeRepositorySection({ userId }: { userId: string }) {
       utils.repository.list.invalidate();
       setFullName("");
       setUrl("");
-      toast.success("Repository added. You can view it in the list.");
+      toast.success("Repository added.");
+      onDone();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -517,7 +533,13 @@ function IncludeRepositorySection({ userId }: { userId: string }) {
   );
 }
 
-function NewReviewSection({ userId }: { userId: string }) {
+function NewReviewSection({
+  userId,
+  onCreated,
+}: {
+  userId: string;
+  onCreated: (id: string) => void;
+}) {
   const { data: repos } = api.repository.list.useQuery({ userId });
   const [prNumber, setPrNumber] = useState("");
   const [prUrl, setPrUrl] = useState("");
@@ -525,12 +547,17 @@ function NewReviewSection({ userId }: { userId: string }) {
   const [repositoryId, setRepositoryId] = useState("");
   const utils = api.useUtils();
   const create = api.prReview.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       utils.prReview.invalidate();
       setPrNumber("");
       setPrUrl("");
       setPrTitle("");
-      toast.success("PR review created. It will appear in All PR reviews and under the chosen repository.");
+      toast.success(
+        "PR review created. Opening the review…",
+      );
+      if (data?.id) {
+        onCreated(data.id);
+      }
     },
     onError: (err) => toast.error(err.message),
   });

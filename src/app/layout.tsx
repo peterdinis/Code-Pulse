@@ -1,11 +1,13 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
 import { Geist, Inter } from "next/font/google";
+import { Toaster } from "sonner";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { ThemeProvider } from "~/components/ThemeProvider";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
 	title: "Code-Pulse",
@@ -22,9 +24,18 @@ export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html className={cn(geist.variable, "font-sans", inter.variable)} lang="en">
-			<body>
-				<TRPCReactProvider>{children}</TRPCReactProvider>
+		<html
+			className={cn(geist.variable, "font-sans", inter.variable)}
+			lang="en"
+			suppressHydrationWarning
+		>
+			<body suppressHydrationWarning>
+				<TRPCReactProvider>
+					<ThemeProvider>
+						{children}
+						<Toaster richColors position="top-right" />
+					</ThemeProvider>
+				</TRPCReactProvider>
 			</body>
 		</html>
 	);
