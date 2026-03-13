@@ -40,7 +40,7 @@ function parseInline(text: string): Segment[] {
   return segments;
 }
 
-function renderInline(segments: Segment[]): ReactNode {
+function renderInline(segments: Segment[]): ReactNode[] {
   return segments.map((s, i) => {
     if (s.type === "text") return s.content;
     if (s.type === "bold")
@@ -69,6 +69,10 @@ export function MarkdownReview({ content, className }: { content: string; classN
 
   while (i < lines.length) {
     const line = lines[i];
+    if (line == null) {
+      i++;
+      continue;
+    }
     const trimmed = line.trimEnd();
 
     if (trimmed.startsWith("```")) {

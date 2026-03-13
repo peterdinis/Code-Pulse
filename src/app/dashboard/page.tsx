@@ -19,12 +19,15 @@ import {
   X,
   Sparkles,
   FileDiff,
+  Search,
+  Filter,
 } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { NotificationBell } from "~/components/NotificationBell";
 import { ClientOnly } from "~/components/ClientOnly";
 import { DiffViewer } from "~/components/DiffViewer";
 import { MarkdownReview } from "~/components/MarkdownReview";
+import { PaginationBar } from "~/components/PaginationBar";
 
 type DashboardSection = "repositories" | "reviews" | "include-repo" | "new-review";
 
@@ -220,9 +223,10 @@ function DashboardContent({
         </main>
       </div>
     </div>
-    </ClientOnly>
   );
 }
+
+const REPO_PAGE_SIZES = [6, 12, 24, 48];
 
 function RepositoriesSection({
   userId,
@@ -231,7 +235,17 @@ function RepositoriesSection({
   userId: string;
   onSelectReview: (id: string) => void;
 }) {
-  const { data: repos, isLoading } = api.repository.list.useQuery({ userId });
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+
+  const { data, isLoading } = api.repository.list.useQuery({
+    userId,
+    search: search.trim() || undefined,
+    page,
+    pageSize,
+  });
+
   const utils = api.useUtils();
   const remove = api.repository.remove.useMutation({
     onSuccess: () => {
@@ -240,75 +254,143 @@ function RepositoriesSection({
     },
   });
 
-  if (isLoading) {
+  const repos = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  if (isLoading && !data) {
     return (
       <p className="text-muted-foreground text-sm">Loading repositories…</p>
     );
   }
 
-  if (!repos?.length) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-10 text-center">
-        <FolderGit2 className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
-        <p className="text-muted-foreground font-medium mb-1">No repositories yet</p>
-        <p className="text-sm text-muted-foreground">
-          Add a repository in &quot;Add repository&quot; to save and view your projects.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <ul className="space-y-4">
-      {repos.map((repo) => {
-        const repoUrl = repo.url ?? `https://github.com/${repo.fullName}`;
-        return (
-          <li
-            key={repo.id}
-            className="rounded-xl border border-border bg-card overflow-hidden"
-          >
-            <div className="flex items-center justify-between gap-4 p-4 hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <FolderGit2 className="w-5 h-5 text-primary shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-medium text-foreground truncate">
-                    {repo.fullName}
-                  </p>
-                  {repo.defaultBranch && (
-                    <p className="text-[12px] text-muted-foreground">
-                      branch: {repo.defaultBranch}
-                    </p>
-                  )}
-                  <a
-                    href={repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-1 text-[12px] text-primary hover:underline"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Open project
-                  </a>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => remove.mutate({ id: repo.id, userId })}
-                className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                title="Remove repository"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <label htmlFor="repo-search" className="sr-only">
+              Search repositories
+            </label>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                id="repo-search"
+                type="search"
+                placeholder="Filter by name (e.g. owner/repo)"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-background border border-input text-foreground text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <RepoReviews
-              userId={userId}
-              repositoryId={repo.id}
-              repoName={repo.fullName}
-              onSelectReview={onSelectReview}
+          </div>
+          {(search || total > pageSize) && (
+            <span className="text-[12px] text-muted-foreground">
+              {total} {total === 1 ? "repository" : "repositories"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {!repos.length ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center">
+          <FolderGit2 className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium mb-1">
+            {search.trim() ? "No repositories match your filter" : "No repositories yet"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {search.trim()
+              ? "Try a different search or clear the filter."
+              : 'Add a repository in "Add repository" to save and view your projects.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <ul className="space-y-4">
+            {repos.map((repo) => {
+              const repoUrl = repo.url ?? `https://github.com/${repo.fullName}`;
+              return (
+                <li
+                  key={repo.id}
+                  className="rounded-xl border border-border bg-card overflow-hidden"
+                >
+                  <div className="flex items-center justify-between gap-4 p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <FolderGit2 className="w-5 h-5 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-medium text-foreground truncate">
+                          {repo.fullName}
+                        </p>
+                        {repo.defaultBranch && (
+                          <p className="text-[12px] text-muted-foreground">
+                            branch: {repo.defaultBranch}
+                          </p>
+                        )}
+                        <a
+                          href={repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-1 text-[12px] text-primary hover:underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Open project
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove.mutate({ id: repo.id, userId })}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      title="Remove repository"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <RepoReviews
+                    userId={userId}
+                    repositoryId={repo.id}
+                    repoName={repo.fullName}
+                    onSelectReview={onSelectReview}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+
+          {totalPages > 1 && (
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              pageSizeOptions={REPO_PAGE_SIZES}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              label="repositories"
             />
-          </li>
-        );
-      })}
-    </ul>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -422,6 +504,15 @@ function ReviewCard({
   );
 }
 
+const REVIEW_PAGE_SIZES = [5, 10, 20, 50];
+const REVIEW_STATUS_OPTIONS = [
+  { value: "", label: "All statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "failed", label: "Failed" },
+] as const;
+
 function ReviewsSection({
   userId,
   onSelectReview,
@@ -429,32 +520,128 @@ function ReviewsSection({
   userId: string;
   onSelectReview: (id: string) => void;
 }) {
-  const { data: reviews, isLoading } = api.prReview.list.useQuery({ userId });
+  const [status, setStatus] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  if (isLoading) {
+  const { data, isLoading } = api.prReview.list.useQuery({
+    userId,
+    status: status && status in { pending: 1, in_progress: 1, completed: 1, failed: 1 } ? (status as "pending" | "in_progress" | "completed" | "failed") : undefined,
+    search: search.trim() || undefined,
+    page,
+    pageSize,
+  });
+
+  const reviews = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+
+  useEffect(() => {
+    setPage(1);
+  }, [status, search]);
+
+  if (isLoading && !data) {
     return <p className="text-muted-foreground text-sm">Loading PR reviews…</p>;
   }
 
-  if (!reviews?.length) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-10 text-center">
-        <GitPullRequest className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
-        <p className="text-muted-foreground font-medium mb-1">No PR reviews yet</p>
-        <p className="text-sm text-muted-foreground">
-          Create one in &quot;New PR review&quot;. If you pick a repository, it will show under that repo too.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <ul className="space-y-3">
-      {reviews.map((review) => (
-        <li key={review.id}>
-          <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <label htmlFor="review-status" className="sr-only">
+              Filter by status
+            </label>
+            <select
+              id="review-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {REVIEW_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value || "all"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="review-search" className="sr-only">
+              Search PR reviews
+            </label>
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                id="review-search"
+                type="search"
+                placeholder="Search by PR # or title…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-background border border-input text-foreground text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {(status || search || total > pageSize) && (
+            <span className="text-[12px] text-muted-foreground">
+              {total} {total === 1 ? "review" : "reviews"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {!reviews.length ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center">
+          <GitPullRequest className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium mb-1">
+            {status || search.trim()
+              ? "No PR reviews match your filters"
+              : "No PR reviews yet"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {status || search.trim()
+              ? "Try changing the status filter or search."
+              : 'Create one in "New PR review". If you pick a repository, it will show under that repo too.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <ul className="space-y-3">
+            {reviews.map((review) => (
+              <li key={review.id}>
+                <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
+              </li>
+            ))}
+          </ul>
+
+          {totalPages > 1 && (
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              pageSizeOptions={REVIEW_PAGE_SIZES}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              label="reviews"
+            />
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

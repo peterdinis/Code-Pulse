@@ -1,18 +1,56 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { repository } from "~/server/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, like, count } from "drizzle-orm";
 
 const idSchema = z.string().min(1);
 
+const PAGE_SIZE_DEFAULT = 8;
+const PAGE_SIZE_MAX = 50;
+
 export const repositoryRouter = createTRPCRouter({
 	list: publicProcedure
-		.input(z.object({ userId: z.string().min(1) }))
+		.input(
+			z.object({
+				userId: z.string().min(1),
+				search: z.string().optional(),
+				page: z.number().int().min(1).optional().default(1),
+				pageSize: z.number().int().min(1).max(PAGE_SIZE_MAX).optional().default(PAGE_SIZE_DEFAULT),
+			}),
+		)
 		.query(async ({ ctx, input }) => {
-			return ctx.db.query.repository.findMany({
-				where: eq(repository.userId, input.userId),
+			const conditions = [eq(repository.userId, input.userId)];
+			if (input.search?.trim()) {
+				const term = `%${input.search.trim()}%`;
+				conditions.push(like(repository.fullName, term));
+			}
+			const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+			const [totalResult] = await ctx.db
+				.select({ count: count() })
+				.from(repository)
+				.where(whereClause);
+
+			const total = totalResult?.count ?? 0;
+			const page = Math.max(1, input.page);
+			const pageSize = Math.min(PAGE_SIZE_MAX, Math.max(1, input.pageSize));
+			const totalPages = Math.max(1, Math.ceil(total / pageSize));
+			const offset = (page - 1) * pageSize;
+
+			const items = await ctx.db.query.repository.findMany({
+				where: whereClause,
 				orderBy: (repo, { desc }) => [desc(repo.createdAt)],
+				limit: pageSize,
+				offset,
 			});
+
+			return {
+				items,
+				total,
+				page,
+				pageSize,
+				totalPages,
+			};
 		}),
 
 	add: publicProcedure

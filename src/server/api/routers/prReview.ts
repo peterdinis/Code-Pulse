@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { prReview, notification } from "~/server/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, like, or, count } from "drizzle-orm";
 import { runAiReview } from "~/server/ai-review";
 
 const statusEnum = z.enum(["pending", "in_progress", "completed", "failed"]);
+
+const PAGE_SIZE_DEFAULT = 10;
+const PAGE_SIZE_MAX = 50;
 
 export const prReviewRouter = createTRPCRouter({
 	getById: publicProcedure
@@ -24,12 +27,57 @@ export const prReviewRouter = createTRPCRouter({
 		}),
 
 	list: publicProcedure
-		.input(z.object({ userId: z.string().min(1) }))
+		.input(
+			z.object({
+				userId: z.string().min(1),
+				status: statusEnum.optional(),
+				search: z.string().optional(),
+				page: z.number().int().min(1).optional().default(1),
+				pageSize: z.number().int().min(1).max(PAGE_SIZE_MAX).optional().default(PAGE_SIZE_DEFAULT),
+			}),
+		)
 		.query(async ({ ctx, input }) => {
-			return ctx.db.query.prReview.findMany({
-				where: eq(prReview.userId, input.userId),
+			const conditions: Parameters<typeof and>[0][] = [eq(prReview.userId, input.userId)];
+			if (input.status) {
+				conditions.push(eq(prReview.status, input.status));
+			}
+			if (input.search?.trim()) {
+				const term = input.search.trim();
+				const termLike = `%${term}%`;
+				const num = Number.parseInt(term, 10);
+				if (Number.isNaN(num)) {
+					conditions.push(like(prReview.prTitle, termLike));
+				} else {
+					conditions.push(or(eq(prReview.prNumber, num), like(prReview.prTitle, termLike))!);
+				}
+			}
+			const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+			const [totalResult] = await ctx.db
+				.select({ count: count() })
+				.from(prReview)
+				.where(whereClause);
+
+			const total = totalResult?.count ?? 0;
+			const page = Math.max(1, input.page);
+			const pageSize = Math.min(PAGE_SIZE_MAX, Math.max(1, input.pageSize));
+			const totalPages = Math.max(1, Math.ceil(total / pageSize));
+			const offset = (page - 1) * pageSize;
+
+			const items = await ctx.db.query.prReview.findMany({
+				where: whereClause,
 				orderBy: (r, { desc }) => [desc(r.createdAt)],
+				limit: pageSize,
+				offset,
 			});
+
+			return {
+				items,
+				total,
+				page,
+				pageSize,
+				totalPages,
+			};
 		}),
 
 	listByRepositoryId: publicProcedure
