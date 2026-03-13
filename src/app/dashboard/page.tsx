@@ -28,21 +28,16 @@ import { ClientOnly } from "~/components/ClientOnly";
 import { DiffViewer } from "~/components/DiffViewer";
 import { MarkdownReview } from "~/components/MarkdownReview";
 import { PaginationBar } from "~/components/PaginationBar";
+import { LoadingScreen } from "~/components/LoadingScreen";
 
 type DashboardSection = "repositories" | "reviews" | "include-repo" | "new-review";
-
-const DashboardLoading = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <p className="text-muted-foreground text-sm">Loading…</p>
-  </div>
-);
 
 function RedirectToHome() {
   const router = useRouter();
   useEffect(() => {
     router.replace("/");
   }, [router]);
-  return <DashboardLoading />;
+  return <LoadingScreen label="Redirecting…" />;
 }
 
 export default function DashboardPage() {
@@ -52,9 +47,9 @@ export default function DashboardPage() {
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
   return (
-    <ClientOnly fallback={<DashboardLoading />}>
+    <ClientOnly fallback={<LoadingScreen label="Loading dashboard…" />}>
       {isPending ? (
-        <DashboardLoading />
+        <LoadingScreen label="Loading dashboard…" />
       ) : !session?.user ? (
         <RedirectToHome />
       ) : (
@@ -202,6 +197,7 @@ function DashboardContent({
           {section === "reviews" && (
             <ReviewsSection
               userId={userId}
+              selectedReviewId={selectedReviewId}
               onSelectReview={setSelectedReviewId}
             />
           )}
@@ -259,6 +255,15 @@ function RepositoriesSection({
       utils.repository.list.invalidate();
       toast.success("Repository removed");
     },
+    onError: (err) => toast.error(err.message ?? "Failed to remove repository"),
+  });
+  const removeReview = api.prReview.remove.useMutation({
+    onSuccess: () => {
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      toast.success("PR review removed");
+    },
+    onError: (err) => toast.error(err.message ?? "Failed to remove PR review"),
   });
 
   const repos = data?.items ?? [];
@@ -363,7 +368,8 @@ function RepositoriesSection({
                     <button
                       type="button"
                       onClick={() => remove.mutate({ id: repo.id, userId })}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      disabled={remove.isPending}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 disabled:opacity-50"
                       title="Remove repository"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -374,6 +380,7 @@ function RepositoriesSection({
                     repositoryId={repo.id}
                     repoName={repo.fullName}
                     onSelectReview={onSelectReview}
+                    onDeleteReview={(reviewId) => removeReview.mutate({ id: reviewId, userId })}
                   />
                 </li>
               );
@@ -406,15 +413,17 @@ function RepoReviews({
   repositoryId,
   repoName,
   onSelectReview,
+  onDeleteReview,
 }: {
   userId: string;
   repositoryId: string;
   repoName: string;
   onSelectReview: (id: string) => void;
+  onDeleteReview: (reviewId: string) => void;
 }) {
   const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery(
     { userId, repositoryId },
-    { staleTime: 60 * 1000, gcTime: 5 * 60 * 1000 },
+    { staleTime: 60 * 1000, gcTime: 5 * 60 * 1000, throwOnError: true },
   );
 
   if (isLoading) return null;
@@ -432,7 +441,12 @@ function RepoReviews({
       ) : (
         <ul className="space-y-2">
           {(reviews ?? []).map((r) => (
-            <ReviewCard key={r.id} review={r} onView={() => onSelectReview(r.id)} />
+            <ReviewCard
+              key={r.id}
+              review={r}
+              onView={() => onSelectReview(r.id)}
+              onDelete={() => onDeleteReview(r.id)}
+            />
           ))}
         </ul>
       )}
@@ -459,9 +473,11 @@ type ReviewRecord = {
 function ReviewCard({
   review,
   onView,
+  onDelete,
 }: {
   review: ReviewRecord;
   onView?: () => void;
+  onDelete?: () => void;
 }) {
   const statusStyle = REVIEW_STATUS_STYLES[review.status] ?? "bg-muted text-muted-foreground border-border";
   return (
@@ -497,15 +513,26 @@ function ReviewCard({
             {review.summary}
           </p>
         )}
-        {onView && (
-          <button
-            type="button"
-            onClick={onView}
-            className="mt-2 text-[12px] text-primary font-medium hover:underline"
-          >
-            View diff & AI review →
-          </button>
-        )}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {onView && (
+            <button
+              type="button"
+              onClick={onView}
+              className="text-[12px] text-primary font-medium hover:underline"
+            >
+              View diff & AI review →
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-[12px] text-destructive font-medium hover:underline"
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -522,15 +549,30 @@ const REVIEW_STATUS_OPTIONS = [
 
 function ReviewsSection({
   userId,
+  selectedReviewId,
   onSelectReview,
 }: {
   userId: string;
-  onSelectReview: (id: string) => void;
+  selectedReviewId: string | null;
+  onSelectReview: (id: string | null) => void;
 }) {
   const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const utils = api.useUtils();
+  const remove = api.prReview.remove.useMutation({
+    onSuccess: (_data, variables) => {
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      if (variables.id === selectedReviewId) {
+        onSelectReview(null);
+      }
+      toast.success("PR review removed");
+    },
+    onError: (err) => toast.error(err.message ?? "Failed to remove PR review"),
+  });
 
   const { data, isLoading } = api.prReview.list.useQuery(
     {
@@ -633,7 +675,11 @@ function ReviewsSection({
           <ul className="space-y-3">
             {reviews.map((review) => (
               <li key={review.id}>
-                <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
+                <ReviewCard
+                  review={review}
+                  onView={() => onSelectReview(review.id)}
+                  onDelete={() => remove.mutate({ id: review.id, userId })}
+                />
               </li>
             ))}
           </ul>
@@ -804,11 +850,15 @@ function NewReviewSection({
     e.preventDefault();
     const num = parseInt(prNumber, 10);
     if (Number.isNaN(num) || num < 1) return;
+    let url: string | undefined = prUrl.trim() || undefined;
+    if (url && !/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+    }
     create.mutate({
       userId,
       repositoryId: repositoryId || undefined,
       prNumber: num,
-      prUrl: prUrl.trim() || undefined,
+      prUrl: url,
       prTitle: prTitle.trim() || undefined,
     });
   };
@@ -949,10 +999,22 @@ function ReviewDetailPanel({
 }) {
   const { data: review, isLoading } = api.prReview.getById.useQuery(
     { id: reviewId, userId },
-    { enabled: !!reviewId },
+    { enabled: !!reviewId, throwOnError: true },
+  );
+  const { data: aiUsage } = api.prReview.getAiReviewUsage.useQuery(
+    { userId },
+    { enabled: !!userId },
   );
   const utils = api.useUtils();
   const [diffText, setDiffText] = useState("");
+  const [limitInput, setLimitInput] = useState("");
+
+  const setLimit = api.prReview.setAiReviewLimit.useMutation({
+    onSuccess: () => {
+      utils.prReview.getAiReviewUsage.invalidate({ userId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const updateDiff = api.prReview.updateDiff.useMutation({
     onSuccess: () => {
@@ -967,9 +1029,21 @@ function ReviewDetailPanel({
       utils.prReview.getById.invalidate({ id: reviewId, userId });
       utils.prReview.list.invalidate();
       utils.prReview.listByRepositoryId.invalidate();
+      utils.prReview.getAiReviewUsage.invalidate({ userId });
       utils.notification.list.invalidate();
       utils.notification.unreadCount.invalidate();
       toast.success("AI review completed.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const remove = api.prReview.remove.useMutation({
+    onSuccess: () => {
+      utils.prReview.getById.invalidate();
+      utils.prReview.list.invalidate();
+      utils.prReview.listByRepositoryId.invalidate();
+      toast.success("PR review removed");
+      onClose();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -1031,14 +1105,26 @@ function ReviewDetailPanel({
             </a>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => remove.mutate({ id: reviewId, userId })}
+            disabled={remove.isPending}
+            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+            aria-label="Delete review"
+            title="Delete PR review"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -1093,14 +1179,82 @@ function ReviewDetailPanel({
           <p className="text-[13px] text-muted-foreground">
             Run AI analysis on the diff. You’ll get a notification when it’s done.
           </p>
+          {/* AI review limit */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+            <p className="text-[12px] font-medium text-foreground">
+              AI review limit (optional)
+            </p>
+            <p className="text-[12px] text-muted-foreground">
+              Set a limit (e.g. 5). After that many completed AI reviews, the button is disabled until you increase the limit or clear it.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                placeholder={aiUsage?.limit?.toString() ?? "No limit"}
+                value={limitInput}
+                onChange={(e) => setLimitInput(e.target.value)}
+                className="w-20 px-2.5 py-1.5 rounded-md border border-input bg-background text-foreground text-[13px] focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const v = limitInput.trim();
+                  const num = v ? Number.parseInt(v, 10) : null;
+                  if (v && (Number.isNaN(num) || num < 1 || num > 1000)) {
+                    toast.error("Enter a number between 1 and 1000");
+                    return;
+                  }
+                  setLimit.mutate({ userId, limit: num ?? null });
+                  setLimitInput("");
+                }}
+                disabled={setLimit.isPending}
+                className="px-3 py-1.5 rounded-md bg-muted text-foreground text-[13px] font-medium hover:bg-muted/80 disabled:opacity-50"
+              >
+                {setLimit.isPending ? "Saving…" : "Set limit"}
+              </button>
+              {aiUsage && aiUsage.limit != null && (
+                <>
+                  <span className="text-[12px] text-muted-foreground">
+                    Used: <strong className="text-foreground">{aiUsage.used}</strong> / {aiUsage.limit}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setLimit.mutate({ userId, limit: null })}
+                    disabled={setLimit.isPending}
+                    className="text-[12px] text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    Clear limit
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+          {aiUsage && aiUsage.limit != null && aiUsage.used >= aiUsage.limit && (
+            <p className="text-[12px] text-destructive">
+              Limit reached. Increase the limit above to run more AI reviews.
+            </p>
+          )}
           <button
             type="button"
             onClick={() => runAi.mutate({ id: reviewId, userId })}
-            disabled={runAi.isPending}
+            disabled={
+              runAi.isPending ||
+              (aiUsage != null &&
+                aiUsage.limit != null &&
+                aiUsage.used >= aiUsage.limit)
+            }
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             <Sparkles className="w-4 h-4" />
-            {runAi.isPending ? "Running AI review…" : "Run AI review"}
+            {runAi.isPending
+              ? "Running AI review…"
+              : aiUsage != null &&
+                  aiUsage.limit != null &&
+                  aiUsage.used >= aiUsage.limit
+                ? "Run AI review (limit reached)"
+                : "Run AI review"}
           </button>
         </section>
 

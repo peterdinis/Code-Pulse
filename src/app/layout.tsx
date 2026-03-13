@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 import { TRPCReactProvider } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { ThemeProvider } from "~/components/ThemeProvider";
+import { LoadingScreen } from "~/components/LoadingScreen";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -33,16 +34,7 @@ export default function RootLayout({
 			<body suppressHydrationWarning>
 				<TRPCReactProvider>
 					<ThemeProvider>
-						<Suspense
-							fallback={
-								<div className="min-h-screen bg-background flex items-center justify-center">
-									<div className="flex flex-col items-center gap-3">
-										<div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-										<p className="text-muted-foreground text-sm">Loading…</p>
-									</div>
-								</div>
-							}
-						>
+						<Suspense fallback={<LoadingScreen label="Loading…" />}>
 							{children}
 						</Suspense>
 						<Toaster richColors position="top-right" />

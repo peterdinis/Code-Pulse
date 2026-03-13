@@ -173,6 +173,21 @@ export const prReview = createTable(
 	]
 );
 
+export const userSettings = createTable(
+	"user_settings",
+	{
+		userId: text("user_id")
+			.primaryKey()
+			.references(() => user.id, { onDelete: "cascade" }),
+		aiReviewLimit: integer("ai_review_limit", { mode: "number" }),
+		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => []
+);
+
 export const notification = createTable(
 	"notification",
 	{
@@ -195,12 +210,20 @@ export const notification = createTable(
 	]
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
 	sessions: many(session),
 	accounts: many(account),
 	repositories: many(repository),
 	prReviews: many(prReview),
 	notifications: many(notification),
+	settings: one(userSettings),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+	user: one(user, {
+		fields: [userSettings.userId],
+		references: [user.id],
+	}),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
