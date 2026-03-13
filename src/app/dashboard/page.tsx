@@ -19,11 +19,31 @@ import {
   X,
   Sparkles,
   FileDiff,
+  Search,
+  Filter,
 } from "lucide-react";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { NotificationBell } from "~/components/NotificationBell";
+import { ClientOnly } from "~/components/ClientOnly";
+import { DiffViewer } from "~/components/DiffViewer";
+import { MarkdownReview } from "~/components/MarkdownReview";
+import { PaginationBar } from "~/components/PaginationBar";
 
 type DashboardSection = "repositories" | "reviews" | "include-repo" | "new-review";
+
+const DashboardLoading = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <p className="text-muted-foreground text-sm">Loading…</p>
+  </div>
+);
+
+function RedirectToHome() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
+  return <DashboardLoading />;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -31,26 +51,41 @@ export default function DashboardPage() {
   const [section, setSection] = useState<DashboardSection>("repositories");
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isPending && !session?.user) {
-      router.replace("/");
-    }
-  }, [session, isPending, router]);
+  return (
+    <ClientOnly fallback={<DashboardLoading />}>
+      {isPending ? (
+        <DashboardLoading />
+      ) : !session?.user ? (
+        <RedirectToHome />
+      ) : (
+        <DashboardContent
+          userId={session.user.id}
+          section={section}
+          setSection={setSection}
+          selectedReviewId={selectedReviewId}
+          setSelectedReviewId={setSelectedReviewId}
+          session={session}
+        />
+      )}
+    </ClientOnly>
+  );
+}
 
-  if (isPending) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Loading…</p>
-      </div>
-    );
-  }
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const userId = session.user.id;
-
+function DashboardContent({
+  userId,
+  section,
+  setSection,
+  selectedReviewId,
+  setSelectedReviewId,
+  session,
+}: {
+  userId: string;
+  section: DashboardSection;
+  setSection: (s: DashboardSection) => void;
+  selectedReviewId: string | null;
+  setSelectedReviewId: (id: string | null) => void;
+  session: { user: { email?: string | null } };
+}) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans antialiased flex">
       {/* Sidebar */}
@@ -171,16 +206,27 @@ export default function DashboardPage() {
             />
           )}
           {section === "include-repo" && (
-            <IncludeRepositorySection userId={userId} />
+          <IncludeRepositorySection
+            userId={userId}
+            onDone={() => setSection("repositories")}
+          />
           )}
           {section === "new-review" && (
-            <NewReviewSection userId={userId} />
+          <NewReviewSection
+            userId={userId}
+            onCreated={(id) => {
+              setSection("reviews");
+              setSelectedReviewId(id);
+            }}
+          />
           )}
         </main>
       </div>
     </div>
   );
 }
+
+const REPO_PAGE_SIZES = [6, 12, 24, 48];
 
 function RepositoriesSection({
   userId,
@@ -189,7 +235,24 @@ function RepositoriesSection({
   userId: string;
   onSelectReview: (id: string) => void;
 }) {
-  const { data: repos, isLoading } = api.repository.list.useQuery({ userId });
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+
+  const { data, isLoading } = api.repository.list.useQuery(
+    {
+      userId,
+      search: search.trim() || undefined,
+      page,
+      pageSize,
+    },
+    {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      throwOnError: true,
+    },
+  );
+
   const utils = api.useUtils();
   const remove = api.repository.remove.useMutation({
     onSuccess: () => {
@@ -198,75 +261,143 @@ function RepositoriesSection({
     },
   });
 
-  if (isLoading) {
+  const repos = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  if (isLoading && !data) {
     return (
       <p className="text-muted-foreground text-sm">Loading repositories…</p>
     );
   }
 
-  if (!repos?.length) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-10 text-center">
-        <FolderGit2 className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
-        <p className="text-muted-foreground font-medium mb-1">No repositories yet</p>
-        <p className="text-sm text-muted-foreground">
-          Add a repository in &quot;Add repository&quot; to save and view your projects.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <ul className="space-y-4">
-      {repos.map((repo) => {
-        const repoUrl = repo.url ?? `https://github.com/${repo.fullName}`;
-        return (
-          <li
-            key={repo.id}
-            className="rounded-xl border border-border bg-card overflow-hidden"
-          >
-            <div className="flex items-center justify-between gap-4 p-4 hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <FolderGit2 className="w-5 h-5 text-primary shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-medium text-foreground truncate">
-                    {repo.fullName}
-                  </p>
-                  {repo.defaultBranch && (
-                    <p className="text-[12px] text-muted-foreground">
-                      branch: {repo.defaultBranch}
-                    </p>
-                  )}
-                  <a
-                    href={repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-1 text-[12px] text-primary hover:underline"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Open project
-                  </a>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => remove.mutate({ id: repo.id, userId })}
-                className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                title="Remove repository"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <label htmlFor="repo-search" className="sr-only">
+              Search repositories
+            </label>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                id="repo-search"
+                type="search"
+                placeholder="Filter by name (e.g. owner/repo)"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-background border border-input text-foreground text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <RepoReviews
-              userId={userId}
-              repositoryId={repo.id}
-              repoName={repo.fullName}
-              onSelectReview={onSelectReview}
+          </div>
+          {(search || total > pageSize) && (
+            <span className="text-[12px] text-muted-foreground">
+              {total} {total === 1 ? "repository" : "repositories"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {!repos.length ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center">
+          <FolderGit2 className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium mb-1">
+            {search.trim() ? "No repositories match your filter" : "No repositories yet"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {search.trim()
+              ? "Try a different search or clear the filter."
+              : 'Add a repository in "Add repository" to save and view your projects.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <ul className="space-y-4">
+            {repos.map((repo) => {
+              const repoUrl = repo.url ?? `https://github.com/${repo.fullName}`;
+              return (
+                <li
+                  key={repo.id}
+                  className="rounded-xl border border-border bg-card overflow-hidden"
+                >
+                  <div className="flex items-center justify-between gap-4 p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <FolderGit2 className="w-5 h-5 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-medium text-foreground truncate">
+                          {repo.fullName}
+                        </p>
+                        {repo.defaultBranch && (
+                          <p className="text-[12px] text-muted-foreground">
+                            branch: {repo.defaultBranch}
+                          </p>
+                        )}
+                        <a
+                          href={repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-1 text-[12px] text-primary hover:underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Open project
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove.mutate({ id: repo.id, userId })}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      title="Remove repository"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <RepoReviews
+                    userId={userId}
+                    repositoryId={repo.id}
+                    repoName={repo.fullName}
+                    onSelectReview={onSelectReview}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+
+          {totalPages > 1 && (
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              pageSizeOptions={REPO_PAGE_SIZES}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              label="repositories"
             />
-          </li>
-        );
-      })}
-    </ul>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -281,10 +412,10 @@ function RepoReviews({
   repoName: string;
   onSelectReview: (id: string) => void;
 }) {
-  const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery({
-    userId,
-    repositoryId,
-  });
+  const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery(
+    { userId, repositoryId },
+    { staleTime: 60 * 1000, gcTime: 5 * 60 * 1000 },
+  );
 
   if (isLoading) return null;
   const count = reviews?.length ?? 0;
@@ -380,6 +511,15 @@ function ReviewCard({
   );
 }
 
+const REVIEW_PAGE_SIZES = [5, 10, 20, 50];
+const REVIEW_STATUS_OPTIONS = [
+  { value: "", label: "All statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "failed", label: "Failed" },
+] as const;
+
 function ReviewsSection({
   userId,
   onSelectReview,
@@ -387,36 +527,145 @@ function ReviewsSection({
   userId: string;
   onSelectReview: (id: string) => void;
 }) {
-  const { data: reviews, isLoading } = api.prReview.list.useQuery({ userId });
+  const [status, setStatus] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  if (isLoading) {
+  const { data, isLoading } = api.prReview.list.useQuery(
+    {
+      userId,
+      status: status && status in { pending: 1, in_progress: 1, completed: 1, failed: 1 } ? (status as "pending" | "in_progress" | "completed" | "failed") : undefined,
+      search: search.trim() || undefined,
+      page,
+      pageSize,
+    },
+    {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      throwOnError: true,
+    },
+  );
+
+  const reviews = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+
+  useEffect(() => {
+    setPage(1);
+  }, [status, search]);
+
+  if (isLoading && !data) {
     return <p className="text-muted-foreground text-sm">Loading PR reviews…</p>;
   }
 
-  if (!reviews?.length) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-10 text-center">
-        <GitPullRequest className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
-        <p className="text-muted-foreground font-medium mb-1">No PR reviews yet</p>
-        <p className="text-sm text-muted-foreground">
-          Create one in &quot;New PR review&quot;. If you pick a repository, it will show under that repo too.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <ul className="space-y-3">
-      {reviews.map((review) => (
-        <li key={review.id}>
-          <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <label htmlFor="review-status" className="sr-only">
+              Filter by status
+            </label>
+            <select
+              id="review-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {REVIEW_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value || "all"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="review-search" className="sr-only">
+              Search PR reviews
+            </label>
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                id="review-search"
+                type="search"
+                placeholder="Search by PR # or title…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-background border border-input text-foreground text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {(status || search || total > pageSize) && (
+            <span className="text-[12px] text-muted-foreground">
+              {total} {total === 1 ? "review" : "reviews"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {!reviews.length ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center">
+          <GitPullRequest className="w-14 h-14 text-muted-foreground/60 mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium mb-1">
+            {status || search.trim()
+              ? "No PR reviews match your filters"
+              : "No PR reviews yet"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {status || search.trim()
+              ? "Try changing the status filter or search."
+              : 'Create one in "New PR review". If you pick a repository, it will show under that repo too.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <ul className="space-y-3">
+            {reviews.map((review) => (
+              <li key={review.id}>
+                <ReviewCard review={review} onView={() => onSelectReview(review.id)} />
+              </li>
+            ))}
+          </ul>
+
+          {totalPages > 1 && (
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              pageSizeOptions={REVIEW_PAGE_SIZES}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              label="reviews"
+            />
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
-function IncludeRepositorySection({ userId }: { userId: string }) {
+function IncludeRepositorySection({
+  userId,
+  onDone,
+}: {
+  userId: string;
+  onDone: () => void;
+}) {
   const [fullName, setFullName] = useState("");
   const [url, setUrl] = useState("");
   const [defaultBranch, setDefaultBranch] = useState("main");
@@ -426,7 +675,8 @@ function IncludeRepositorySection({ userId }: { userId: string }) {
       utils.repository.list.invalidate();
       setFullName("");
       setUrl("");
-      toast.success("Repository added. You can view it in the list.");
+      toast.success("Repository added.");
+      onDone();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -517,20 +767,35 @@ function IncludeRepositorySection({ userId }: { userId: string }) {
   );
 }
 
-function NewReviewSection({ userId }: { userId: string }) {
-  const { data: repos } = api.repository.list.useQuery({ userId });
+function NewReviewSection({
+  userId,
+  onCreated,
+}: {
+  userId: string;
+  onCreated: (id: string) => void;
+}) {
+  const { data: reposData } = api.repository.list.useQuery(
+    { userId, pageSize: 100 },
+    { staleTime: 2 * 60 * 1000, gcTime: 5 * 60 * 1000, throwOnError: true },
+  );
+  const repos = reposData?.items ?? [];
   const [prNumber, setPrNumber] = useState("");
   const [prUrl, setPrUrl] = useState("");
   const [prTitle, setPrTitle] = useState("");
   const [repositoryId, setRepositoryId] = useState("");
   const utils = api.useUtils();
   const create = api.prReview.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       utils.prReview.invalidate();
       setPrNumber("");
       setPrUrl("");
       setPrTitle("");
-      toast.success("PR review created. It will appear in All PR reviews and under the chosen repository.");
+      toast.success(
+        "PR review created. Opening the review…",
+      );
+      if (data?.id) {
+        onCreated(data.id);
+      }
     },
     onError: (err) => toast.error(err.message),
   });
@@ -560,7 +825,7 @@ function NewReviewSection({ userId }: { userId: string }) {
         onSubmit={handleSubmit}
         className="p-6 rounded-xl border border-border bg-card space-y-5"
       >
-        {repos && repos.length > 0 && (
+        {repos.length > 0 && (
           <div>
             <label
               htmlFor="repositoryId"
@@ -644,6 +909,35 @@ function NewReviewSection({ userId }: { userId: string }) {
   );
 }
 
+function ReviewDetailPanelSkeleton() {
+  return (
+    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl border-l border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+      <div className="shrink-0 flex items-center justify-between gap-4 p-4 border-b border-border bg-muted/30">
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="h-5 w-48 rounded-md bg-muted animate-pulse" />
+          <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+        </div>
+        <div className="h-9 w-9 rounded-lg bg-muted animate-pulse shrink-0" />
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="space-y-2">
+          <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+          <div className="h-36 rounded-lg bg-muted/50 animate-pulse" />
+          <div className="h-9 w-24 rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+          <div className="h-10 w-full rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+          <div className="h-48 rounded-lg bg-muted/30 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReviewDetailPanel({
   reviewId,
   userId,
@@ -655,7 +949,7 @@ function ReviewDetailPanel({
 }) {
   const { data: review, isLoading } = api.prReview.getById.useQuery(
     { id: reviewId, userId },
-    { enabled: !!reviewId }
+    { enabled: !!reviewId },
   );
   const utils = api.useUtils();
   const [diffText, setDiffText] = useState("");
@@ -675,7 +969,7 @@ function ReviewDetailPanel({
       utils.prReview.listByRepositoryId.invalidate();
       utils.notification.list.invalidate();
       utils.notification.unreadCount.invalidate();
-      toast.success("AI review completed. Check notifications.");
+      toast.success("AI review completed.");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -686,26 +980,51 @@ function ReviewDetailPanel({
 
   if (isLoading || !review) {
     return (
-      <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-        <p className="text-muted-foreground text-sm">Loading review…</p>
+      <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm">
+        <ReviewDetailPanelSkeleton />
       </div>
     );
   }
 
+  const statusLabel =
+    review.status === "in_progress"
+      ? "Running…"
+      : review.status === "completed"
+        ? "Completed"
+        : review.status === "failed"
+          ? "Failed"
+          : "Pending";
+
   return (
     <div className="fixed inset-y-0 right-0 z-40 w-full max-w-2xl border-l border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+      {/* Header */}
       <div className="shrink-0 flex items-center justify-between gap-4 p-4 border-b border-border bg-muted/30">
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-foreground truncate">
-            PR #{review.prNumber}
-            {review.prTitle ? ` — ${review.prTitle}` : ""}
-          </h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground truncate">
+              PR #{review.prNumber}
+              {review.prTitle ? ` — ${review.prTitle}` : ""}
+            </h2>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                review.status === "completed"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : review.status === "in_progress"
+                    ? "bg-primary/15 text-primary"
+                    : review.status === "failed"
+                      ? "bg-destructive/15 text-destructive"
+                      : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {statusLabel}
+            </span>
+          </div>
           {review.prUrl && (
             <a
               href={review.prUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+              className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Open PR
@@ -723,13 +1042,17 @@ function ReviewDetailPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <FileDiff className="w-4 h-4 text-primary" />
+        {/* Diff input */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <FileDiff className="w-4 h-4 text-primary shrink-0" />
             <h3 className="text-sm font-semibold text-foreground">
-              Diff (paste your changes here)
+              Diff
             </h3>
           </div>
+          <p className="text-[13px] text-muted-foreground">
+            Paste your git diff or patch below, then save. Use &quot;Run AI review&quot; to analyze.
+          </p>
           <textarea
             value={diffText}
             onChange={(e) => setDiffText(e.target.value)}
@@ -737,49 +1060,58 @@ function ReviewDetailPanel({
             className="w-full h-40 px-3 py-2 rounded-lg bg-background border border-input text-foreground text-[13px] font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[120px]"
             spellCheck={false}
           />
-          <button
-            type="button"
-            onClick={() =>
-              updateDiff.mutate({ id: reviewId, userId, diffText })
-            }
-            disabled={updateDiff.isPending}
-            className="mt-2 px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 disabled:opacity-50"
-          >
-            {updateDiff.isPending ? "Saving…" : "Save diff"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                updateDiff.mutate({ id: reviewId, userId, diffText })
+              }
+              disabled={updateDiff.isPending || diffText === (review.diffText ?? "")}
+              className="px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 disabled:opacity-50 disabled:pointer-events-none transition-opacity"
+            >
+              {updateDiff.isPending ? "Saving…" : "Save diff"}
+            </button>
+            {diffText.trim() && (
+              <div className="text-[12px] text-muted-foreground">
+                Preview:
+              </div>
+            )}
+          </div>
+          {diffText.trim() && (
+            <DiffViewer content={diffText} className="max-h-48 overflow-y-auto" />
+          )}
         </section>
 
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-primary" />
+        {/* Run AI */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary shrink-0" />
             <h3 className="text-sm font-semibold text-foreground">
               AI review
             </h3>
           </div>
-          <p className="text-[13px] text-muted-foreground mb-2">
-            Run AI analysis on the diff above. When finished, you’ll get a
-            notification.
+          <p className="text-[13px] text-muted-foreground">
+            Run AI analysis on the diff. You’ll get a notification when it’s done.
           </p>
           <button
             type="button"
             onClick={() => runAi.mutate({ id: reviewId, userId })}
             disabled={runAi.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             <Sparkles className="w-4 h-4" />
             {runAi.isPending ? "Running AI review…" : "Run AI review"}
           </button>
         </section>
 
+        {/* AI result */}
         {review.aiReview && (
-          <section>
-            <h3 className="text-sm font-semibold text-foreground mb-2">
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">
               AI review result
             </h3>
-            <div className="rounded-lg border border-border bg-muted/20 p-4">
-              <pre className="text-[13px] text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                {review.aiReview}
-              </pre>
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+              <MarkdownReview content={review.aiReview} />
             </div>
           </section>
         )}
