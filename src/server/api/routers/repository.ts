@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { repository } from "~/server/db/schema";
 import { eq, and, like, count } from "drizzle-orm";
@@ -19,38 +21,52 @@ export const repositoryRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const conditions = [eq(repository.userId, input.userId)];
-			if (input.search?.trim()) {
-				const term = `%${input.search.trim()}%`;
-				conditions.push(like(repository.fullName, term));
-			}
-			const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+			const cacheKey = [
+				"repository-list",
+				input.userId,
+				input.search ?? "",
+				String(input.page),
+				String(input.pageSize),
+			] as const;
 
-			const [totalResult] = await ctx.db
-				.select({ count: count() })
-				.from(repository)
-				.where(whereClause);
+			return unstable_cache(
+				async () => {
+					const conditions = [eq(repository.userId, input.userId)];
+					if (input.search?.trim()) {
+						const term = `%${input.search.trim()}%`;
+						conditions.push(like(repository.fullName, term));
+					}
+					const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
-			const total = totalResult?.count ?? 0;
-			const page = Math.max(1, input.page);
-			const pageSize = Math.min(PAGE_SIZE_MAX, Math.max(1, input.pageSize));
-			const totalPages = Math.max(1, Math.ceil(total / pageSize));
-			const offset = (page - 1) * pageSize;
+					const [totalResult] = await ctx.db
+						.select({ count: count() })
+						.from(repository)
+						.where(whereClause);
 
-			const items = await ctx.db.query.repository.findMany({
-				where: whereClause,
-				orderBy: (repo, { desc }) => [desc(repo.createdAt)],
-				limit: pageSize,
-				offset,
-			});
+					const total = totalResult?.count ?? 0;
+					const page = Math.max(1, input.page);
+					const pageSize = Math.min(PAGE_SIZE_MAX, Math.max(1, input.pageSize));
+					const totalPages = Math.max(1, Math.ceil(total / pageSize));
+					const offset = (page - 1) * pageSize;
 
-			return {
-				items,
-				total,
-				page,
-				pageSize,
-				totalPages,
-			};
+					const items = await ctx.db.query.repository.findMany({
+						where: whereClause,
+						orderBy: (repo, { desc }) => [desc(repo.createdAt)],
+						limit: pageSize,
+						offset,
+					});
+
+					return {
+						items,
+						total,
+						page,
+						pageSize,
+						totalPages,
+					};
+				},
+				cacheKey,
+				{ revalidate: 60, tags: ["repository-list"] },
+			)();
 		}),
 
 	add: publicProcedure
@@ -66,6 +82,7 @@ export const repositoryRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			revalidateTag("repository-list");
 			const id = crypto.randomUUID();
 			await ctx.db.insert(repository).values({
 				id,
@@ -83,6 +100,7 @@ export const repositoryRouter = createTRPCRouter({
 	remove: publicProcedure
 		.input(z.object({ id: idSchema, userId: z.string().min(1) }))
 		.mutation(async ({ ctx, input }) => {
+			revalidateTag("repository-list");
 			await ctx.db
 				.delete(repository)
 				.where(

@@ -239,12 +239,19 @@ function RepositoriesSection({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
 
-  const { data, isLoading } = api.repository.list.useQuery({
-    userId,
-    search: search.trim() || undefined,
-    page,
-    pageSize,
-  });
+  const { data, isLoading } = api.repository.list.useQuery(
+    {
+      userId,
+      search: search.trim() || undefined,
+      page,
+      pageSize,
+    },
+    {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      throwOnError: true,
+    },
+  );
 
   const utils = api.useUtils();
   const remove = api.repository.remove.useMutation({
@@ -405,10 +412,10 @@ function RepoReviews({
   repoName: string;
   onSelectReview: (id: string) => void;
 }) {
-  const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery({
-    userId,
-    repositoryId,
-  });
+  const { data: reviews, isLoading } = api.prReview.listByRepositoryId.useQuery(
+    { userId, repositoryId },
+    { staleTime: 60 * 1000, gcTime: 5 * 60 * 1000 },
+  );
 
   if (isLoading) return null;
   const count = reviews?.length ?? 0;
@@ -525,13 +532,20 @@ function ReviewsSection({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const { data, isLoading } = api.prReview.list.useQuery({
-    userId,
-    status: status && status in { pending: 1, in_progress: 1, completed: 1, failed: 1 } ? (status as "pending" | "in_progress" | "completed" | "failed") : undefined,
-    search: search.trim() || undefined,
-    page,
-    pageSize,
-  });
+  const { data, isLoading } = api.prReview.list.useQuery(
+    {
+      userId,
+      status: status && status in { pending: 1, in_progress: 1, completed: 1, failed: 1 } ? (status as "pending" | "in_progress" | "completed" | "failed") : undefined,
+      search: search.trim() || undefined,
+      page,
+      pageSize,
+    },
+    {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      throwOnError: true,
+    },
+  );
 
   const reviews = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -760,7 +774,11 @@ function NewReviewSection({
   userId: string;
   onCreated: (id: string) => void;
 }) {
-  const { data: repos } = api.repository.list.useQuery({ userId });
+  const { data: reposData } = api.repository.list.useQuery(
+    { userId, pageSize: 100 },
+    { staleTime: 2 * 60 * 1000, gcTime: 5 * 60 * 1000, throwOnError: true },
+  );
+  const repos = reposData?.items ?? [];
   const [prNumber, setPrNumber] = useState("");
   const [prUrl, setPrUrl] = useState("");
   const [prTitle, setPrTitle] = useState("");
@@ -807,7 +825,7 @@ function NewReviewSection({
         onSubmit={handleSubmit}
         className="p-6 rounded-xl border border-border bg-card space-y-5"
       >
-        {repos && repos.length > 0 && (
+        {repos.length > 0 && (
           <div>
             <label
               htmlFor="repositoryId"
