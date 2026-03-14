@@ -1202,7 +1202,12 @@ function ReviewDetailPanel({
                 onClick={() => {
                   const v = limitInput.trim();
                   const num = v ? Number.parseInt(v, 10) : null;
-                  if (v && (Number.isNaN(num) || num < 1 || num > 1000)) {
+                  const isValid =
+                    num !== null &&
+                    !Number.isNaN(num) &&
+                    num >= 1 &&
+                    num <= 1000;
+                  if (v && !isValid) {
                     toast.error("Enter a number between 1 and 1000");
                     return;
                   }

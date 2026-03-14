@@ -21,13 +21,13 @@ export const repositoryRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const cacheKey = [
+			const cacheKey: string[] = [
 				"repository-list",
 				input.userId,
 				input.search ?? "",
 				String(input.page),
 				String(input.pageSize),
-			] as const;
+			];
 
 			return unstable_cache(
 				async () => {

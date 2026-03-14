@@ -2,7 +2,7 @@ import { unstable_cache, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { prReview, notification, userSettings } from "~/server/db/schema";
-import { eq, and, like, or, count } from "drizzle-orm";
+import { eq, and, like, or, count, type SQL } from "drizzle-orm";
 import { runAiReview } from "~/server/ai-review";
 
 const statusEnum = z.enum(["pending", "in_progress", "completed", "failed"]);
@@ -38,14 +38,14 @@ export const prReviewRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const cacheKey = [
+			const cacheKey: string[] = [
 				"pr-review-list",
 				input.userId,
 				input.status ?? "",
 				input.search ?? "",
 				String(input.page),
 				String(input.pageSize),
-			] as const;
+			];
 
 			return unstable_cache(
 				async () => {
@@ -68,7 +68,7 @@ export const prReviewRouter = createTRPCRouter({
 					const [totalResult] = await ctx.db
 						.select({ count: count() })
 						.from(prReview)
-						.where(whereClause);
+						.where(whereClause as SQL);
 
 					const total = totalResult?.count ?? 0;
 					const page = Math.max(1, input.page);
@@ -77,7 +77,7 @@ export const prReviewRouter = createTRPCRouter({
 					const offset = (page - 1) * pageSize;
 
 					const items = await ctx.db.query.prReview.findMany({
-						where: whereClause,
+						where: whereClause as SQL,
 						orderBy: (r, { desc }) => [desc(r.createdAt)],
 						limit: pageSize,
 						offset,
