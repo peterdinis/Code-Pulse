@@ -180,6 +180,12 @@ export const userSettings = createTable(
 			.primaryKey()
 			.references(() => user.id, { onDelete: "cascade" }),
 		aiReviewLimit: integer("ai_review_limit", { mode: "number" }),
+		/** AI provider for code reviews: "openai" (ChatGPT) or "gemini" */
+		aiProvider: text("ai_provider", { enum: ["openai", "gemini"] }),
+		/** User's OpenAI API key (optional; falls back to OPENAI_API_KEY env if not set) */
+		openaiApiKey: text("openai_api_key"),
+		/** User's Google Gemini API key */
+		geminiApiKey: text("gemini_api_key"),
 		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.$onUpdate(() => new Date())
