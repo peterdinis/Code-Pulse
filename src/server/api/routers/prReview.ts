@@ -2,7 +2,7 @@ import { unstable_cache, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { prReview, notification, userSettings } from "~/server/db/schema";
-import { eq, and, like, or, count } from "drizzle-orm";
+import { eq, and, like, or, count, type SQL } from "drizzle-orm";
 import { runAiReview } from "~/server/ai-review";
 
 const statusEnum = z.enum(["pending", "in_progress", "completed", "failed"]);
@@ -38,14 +38,14 @@ export const prReviewRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const cacheKey = [
+			const cacheKey: string[] = [
 				"pr-review-list",
 				input.userId,
 				input.status ?? "",
 				input.search ?? "",
 				String(input.page),
 				String(input.pageSize),
-			] as const;
+			];
 
 			return unstable_cache(
 				async () => {
@@ -68,7 +68,7 @@ export const prReviewRouter = createTRPCRouter({
 					const [totalResult] = await ctx.db
 						.select({ count: count() })
 						.from(prReview)
-						.where(whereClause);
+						.where(whereClause as SQL);
 
 					const total = totalResult?.count ?? 0;
 					const page = Math.max(1, input.page);
@@ -77,7 +77,7 @@ export const prReviewRouter = createTRPCRouter({
 					const offset = (page - 1) * pageSize;
 
 					const items = await ctx.db.query.prReview.findMany({
-						where: whereClause,
+						where: whereClause as SQL,
 						orderBy: (r, { desc }) => [desc(r.createdAt)],
 						limit: pageSize,
 						offset,
@@ -204,7 +204,12 @@ export const prReviewRouter = createTRPCRouter({
 		.input(z.object({ userId: z.string().min(1) }))
 		.query(async ({ ctx, input }) => {
 			const [settings] = await ctx.db
-				.select({ aiReviewLimit: userSettings.aiReviewLimit })
+				.select({
+					aiReviewLimit: userSettings.aiReviewLimit,
+					aiProvider: userSettings.aiProvider,
+					openaiApiKey: userSettings.openaiApiKey,
+					geminiApiKey: userSettings.geminiApiKey,
+				})
 				.from(userSettings)
 				.where(eq(userSettings.userId, input.userId))
 				.limit(1);
@@ -219,7 +224,14 @@ export const prReviewRouter = createTRPCRouter({
 				);
 			const limit = settings?.aiReviewLimit ?? null;
 			const used = usedResult?.count ?? 0;
-			return { limit, used };
+			const provider = settings?.aiProvider === "gemini" ? "gemini" : "openai";
+			return {
+				limit,
+				used,
+				provider,
+				openaiConfigured: !!settings?.openaiApiKey?.trim(),
+				geminiConfigured: !!settings?.geminiApiKey?.trim(),
+			};
 		}),
 
 	setAiReviewLimit: publicProcedure
@@ -243,6 +255,53 @@ export const prReviewRouter = createTRPCRouter({
 			return { ok: true };
 		}),
 
+	setAiReviewSettings: publicProcedure
+		.input(
+			z.object({
+				userId: z.string().min(1),
+				provider: z.enum(["openai", "gemini"]).optional(),
+				openaiApiKey: z.string().nullable().optional(),
+				geminiApiKey: z.string().nullable().optional(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [existing] = await ctx.db
+				.select()
+				.from(userSettings)
+				.where(eq(userSettings.userId, input.userId))
+				.limit(1);
+
+			const updates: Partial<{
+				aiProvider: "openai" | "gemini";
+				openaiApiKey: string | null;
+				geminiApiKey: string | null;
+			}> = {};
+			if (input.provider !== undefined) updates.aiProvider = input.provider;
+			if (input.openaiApiKey !== undefined)
+				updates.openaiApiKey = input.openaiApiKey?.trim() || null;
+			if (input.geminiApiKey !== undefined)
+				updates.geminiApiKey = input.geminiApiKey?.trim() || null;
+
+			if (Object.keys(updates).length === 0) return { ok: true };
+
+			const merged = {
+				userId: input.userId,
+				aiReviewLimit: existing?.aiReviewLimit ?? null,
+				aiProvider: updates.aiProvider ?? existing?.aiProvider ?? "openai",
+				openaiApiKey: updates.openaiApiKey ?? existing?.openaiApiKey ?? null,
+				geminiApiKey: updates.geminiApiKey ?? existing?.geminiApiKey ?? null,
+			};
+
+			await ctx.db
+				.insert(userSettings)
+				.values(merged)
+				.onConflictDoUpdate({
+					target: userSettings.userId,
+					set: updates,
+				});
+			return { ok: true };
+		}),
+
 	runAiReview: publicProcedure
 		.input(z.object({ id: z.string().min(1), userId: z.string().min(1) }))
 		.mutation(async ({ ctx, input }) => {
@@ -260,7 +319,12 @@ export const prReviewRouter = createTRPCRouter({
 			if (!review) throw new Error("Review not found");
 
 			const [settings] = await ctx.db
-				.select({ aiReviewLimit: userSettings.aiReviewLimit })
+				.select({
+					aiReviewLimit: userSettings.aiReviewLimit,
+					aiProvider: userSettings.aiProvider,
+					openaiApiKey: userSettings.openaiApiKey,
+					geminiApiKey: userSettings.geminiApiKey,
+				})
 				.from(userSettings)
 				.where(eq(userSettings.userId, input.userId))
 				.limit(1);
@@ -291,11 +355,19 @@ export const prReviewRouter = createTRPCRouter({
 					)
 				);
 
-			const aiReviewText = await runAiReview({
-				prTitle: review.prTitle,
-				prNumber: review.prNumber,
-				diffText: review.diffText,
-			});
+			const provider = settings?.aiProvider === "gemini" ? "gemini" : "openai";
+			const aiReviewText = await runAiReview(
+				{
+					prTitle: review.prTitle,
+					prNumber: review.prNumber,
+					diffText: review.diffText,
+				},
+				{
+					provider,
+					openaiApiKey: settings?.openaiApiKey ?? null,
+					geminiApiKey: settings?.geminiApiKey ?? null,
+				},
+			);
 
 			await ctx.db
 				.update(prReview)

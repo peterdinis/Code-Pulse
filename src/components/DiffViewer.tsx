@@ -30,21 +30,21 @@ export function DiffViewer({ content, className }: { content: string; className?
 
   return (
     <div
-      className={`overflow-x-auto rounded-lg border border-border bg-[#0d1117] font-mono text-[13px] leading-relaxed ${className ?? ""}`}
+      className={`diff-theme overflow-x-auto rounded-lg font-mono text-[13px] leading-relaxed ${className ?? ""}`}
     >
       <div className="min-w-max">
         {lines.map((line, i) => (
           <div
             key={i}
-            className={`flex border-b border-border/50 last:border-b-0 ${
+            className={`flex border-b border-[var(--code-border)]/50 last:border-b-0 ${
               line.type === "add"
-                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                ? "diff-add"
                 : line.type === "remove"
-                  ? "bg-red-500/10 text-red-700 dark:text-red-300"
-                  : "text-muted-foreground bg-transparent"
+                  ? "diff-remove"
+                  : "diff-context bg-transparent"
             }`}
           >
-            <span className="w-8 shrink-0 select-none pr-2 text-right text-muted-foreground/70 border-r border-border/50 py-0.5">
+            <span className="w-8 shrink-0 select-none pr-2 text-right opacity-60 border-r border-[var(--code-border)]/50 py-0.5">
               {line.type === "add" ? "+" : line.type === "remove" ? "-" : " "}
             </span>
             <span className="py-0.5 pl-2 break-all whitespace-pre-wrap">{line.text || " "}</span>

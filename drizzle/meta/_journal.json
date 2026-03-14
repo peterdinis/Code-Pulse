@@ -43,6 +43,13 @@
       "when": 1773429824111,
       "tag": "0005_known_saracen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1773476597383,
+      "tag": "0006_slippery_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

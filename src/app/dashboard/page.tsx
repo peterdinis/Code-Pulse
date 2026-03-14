@@ -1008,6 +1008,24 @@ function ReviewDetailPanel({
   const utils = api.useUtils();
   const [diffText, setDiffText] = useState("");
   const [limitInput, setLimitInput] = useState("");
+  const [providerSelect, setProviderSelect] = useState<"openai" | "gemini">("openai");
+  const [openaiKeyInput, setOpenaiKeyInput] = useState("");
+  const [geminiKeyInput, setGeminiKeyInput] = useState("");
+
+  useEffect(() => {
+    if (aiUsage?.provider === "openai" || aiUsage?.provider === "gemini")
+      setProviderSelect(aiUsage.provider);
+  }, [aiUsage?.provider]);
+
+  const setAiSettings = api.prReview.setAiReviewSettings.useMutation({
+    onSuccess: () => {
+      utils.prReview.getAiReviewUsage.invalidate({ userId });
+      setOpenaiKeyInput("");
+      setGeminiKeyInput("");
+      toast.success("AI settings saved.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const setLimit = api.prReview.setAiReviewLimit.useMutation({
     onSuccess: () => {
@@ -1179,6 +1197,72 @@ function ReviewDetailPanel({
           <p className="text-[13px] text-muted-foreground">
             Run AI analysis on the diff. You’ll get a notification when it’s done.
           </p>
+          {/* AI provider & API keys */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+            <p className="text-[12px] font-medium text-foreground">
+              Provider & API keys
+            </p>
+            <div className="flex flex-col gap-2">
+              <label className="text-[12px] text-muted-foreground">
+                AI provider
+              </label>
+              <select
+                value={providerSelect}
+                onChange={(e) =>
+                  setProviderSelect(e.target.value as "openai" | "gemini")
+                }
+                className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="openai">ChatGPT (OpenAI)</option>
+                <option value="gemini">Gemini (Google)</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[12px] text-muted-foreground">
+                OpenAI API key {aiUsage?.openaiConfigured && (
+                  <span className="text-emerald-600 dark:text-emerald-400">(configured)</span>
+                )}
+              </label>
+              <input
+                type="password"
+                placeholder="sk-… (leave empty to keep current)"
+                value={openaiKeyInput}
+                onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                autoComplete="off"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[12px] text-muted-foreground">
+                Gemini API key {aiUsage?.geminiConfigured && (
+                  <span className="text-emerald-600 dark:text-emerald-400">(configured)</span>
+                )}
+              </label>
+              <input
+                type="password"
+                placeholder="Leave empty to keep current · Get key: aistudio.google.com"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                autoComplete="off"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setAiSettings.mutate({
+                  userId,
+                  provider: providerSelect,
+                  openaiApiKey: openaiKeyInput.trim() || undefined,
+                  geminiApiKey: geminiKeyInput.trim() || undefined,
+                })
+              }
+              disabled={setAiSettings.isPending}
+              className="self-start px-3 py-1.5 rounded-md bg-muted text-foreground text-[13px] font-medium hover:bg-muted/80 disabled:opacity-50"
+            >
+              {setAiSettings.isPending ? "Saving…" : "Save AI settings"}
+            </button>
+          </div>
           {/* AI review limit */}
           <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
             <p className="text-[12px] font-medium text-foreground">
@@ -1202,7 +1286,12 @@ function ReviewDetailPanel({
                 onClick={() => {
                   const v = limitInput.trim();
                   const num = v ? Number.parseInt(v, 10) : null;
-                  if (v && (Number.isNaN(num) || num < 1 || num > 1000)) {
+                  const isValid =
+                    num !== null &&
+                    !Number.isNaN(num) &&
+                    num >= 1 &&
+                    num <= 1000;
+                  if (v && !isValid) {
                     toast.error("Enter a number between 1 and 1000");
                     return;
                   }

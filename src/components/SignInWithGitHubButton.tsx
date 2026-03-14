@@ -44,7 +44,7 @@ export function SignInWithGitHubButton({
         provider: "github",
         callbackURL: resolvedCallbackURL
       });
-      if (result?.url) {
+      if (result && "url" in result && typeof result.url === "string") {
         window.location.href = result.url;
       } else {
         setIsLoading(false);
