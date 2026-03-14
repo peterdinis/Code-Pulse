@@ -50,8 +50,8 @@ function renderInline(segments: Segment[]): ReactNode[] {
         "code",
         {
           key: i,
-          className:
-            "px-1.5 py-0.5 rounded bg-muted text-foreground text-[12px] font-mono border border-border",
+          "data-inline-code": "",
+          className: "code-theme",
         },
         s.content,
       );
@@ -89,10 +89,10 @@ export function MarkdownReview({ content, className }: { content: string; classN
           "pre",
           {
             key: blocks.length,
-            className:
-              "rounded-lg border border-border bg-muted/30 p-4 overflow-x-auto text-[13px] font-mono leading-relaxed my-3",
+            "data-code-theme": "",
+            className: "code-theme p-4 overflow-x-auto my-3",
           },
-          createElement("code", { className: "text-foreground" }, codeLines.join("\n")),
+          createElement("code", {}, codeLines.join("\n")),
         ),
       );
       continue;
