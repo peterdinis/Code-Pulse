@@ -6,8 +6,8 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-    reactStrictMode: true,
-    typedRoutes: true,
+	reactStrictMode: true,
+	typedRoutes: true,
 };
 
 export default config;

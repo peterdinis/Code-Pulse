@@ -1,15 +1,23 @@
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { notification } from "~/server/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
 
 export const notificationRouter = createTRPCRouter({
 	list: publicProcedure
-		.input(z.object({ userId: z.string().min(1), unreadOnly: z.boolean().optional() }))
+		.input(
+			z.object({
+				userId: z.string().min(1),
+				unreadOnly: z.boolean().optional(),
+			}),
+		)
 		.query(async ({ ctx, input }) => {
 			return ctx.db.query.notification.findMany({
 				where: input.unreadOnly
-					? and(eq(notification.userId, input.userId), isNull(notification.readAt))
+					? and(
+							eq(notification.userId, input.userId),
+							isNull(notification.readAt),
+						)
 					: eq(notification.userId, input.userId),
 				orderBy: (n, { desc }) => [desc(n.createdAt)],
 			});
@@ -21,7 +29,7 @@ export const notificationRouter = createTRPCRouter({
 			const list = await ctx.db.query.notification.findMany({
 				where: and(
 					eq(notification.userId, input.userId),
-					isNull(notification.readAt)
+					isNull(notification.readAt),
 				),
 				columns: { id: true },
 			});
@@ -37,8 +45,8 @@ export const notificationRouter = createTRPCRouter({
 				.where(
 					and(
 						eq(notification.id, input.id),
-						eq(notification.userId, input.userId)
-					)
+						eq(notification.userId, input.userId),
+					),
 				);
 			return { ok: true };
 		}),

@@ -1,13 +1,12 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Geist, Inter } from "next/font/google";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
-
-import { TRPCReactProvider } from "~/trpc/react";
-import { cn } from "~/lib/utils";
-import { ThemeProvider } from "~/components/ThemeProvider";
 import { LoadingScreen } from "~/components/LoadingScreen";
+import { ThemeProvider } from "~/components/ThemeProvider";
+import { cn } from "~/lib/utils";
+import { TRPCReactProvider } from "~/trpc/react";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -37,7 +36,7 @@ export default function RootLayout({
 						<Suspense fallback={<LoadingScreen label="Loading…" />}>
 							{children}
 						</Suspense>
-						<Toaster richColors position="top-right" />
+						<Toaster position="top-right" richColors />
 					</ThemeProvider>
 				</TRPCReactProvider>
 			</body>

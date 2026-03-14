@@ -7,18 +7,18 @@ import { useEffect, useState } from "react";
  * content depends on client-only state (theme, session, etc.).
  */
 export function ClientOnly({
-  children,
-  fallback = null,
+	children,
+	fallback = null,
 }: {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+	children: React.ReactNode;
+	fallback?: React.ReactNode;
 }) {
-  const [mounted, setMounted] = useState(false);
+	const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
-  if (!mounted) return <>{fallback}</>;
-  return <>{children}</>;
+	if (!mounted) return <>{fallback}</>;
+	return <>{children}</>;
 }

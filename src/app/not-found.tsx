@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { Home, SearchX } from "lucide-react";
+import Link from "next/link";
 import { cn } from "~/lib/utils";
 
 const container = {
@@ -52,49 +52,49 @@ export default function NotFound() {
 	return (
 		<div
 			className={cn(
-				"min-h-screen flex flex-col items-center justify-center px-6",
+				"flex min-h-screen flex-col items-center justify-center px-6",
 				"bg-background text-foreground",
 			)}
 		>
 			{/* Decorative background blob */}
 			<motion.div
+				animate="visible"
 				className="pointer-events-none absolute inset-0 overflow-hidden"
 				initial="hidden"
-				animate="visible"
 				variants={container}
 			>
 				<motion.div
-					className="absolute -left-1/4 top-1/3 h-96 w-96 rounded-full bg-[#00e5a0]/10 blur-3xl"
-					variants={pulse}
 					animate="animate"
+					className="absolute top-1/3 -left-1/4 h-96 w-96 rounded-full bg-[#00e5a0]/10 blur-3xl"
+					variants={pulse}
 				/>
 				<motion.div
-					className="absolute -right-1/4 bottom-1/3 h-80 w-80 rounded-full bg-[#00e5a0]/5 blur-3xl"
-					variants={pulse}
 					animate="animate"
+					className="absolute -right-1/4 bottom-1/3 h-80 w-80 rounded-full bg-[#00e5a0]/5 blur-3xl"
 					style={{ transitionDelay: "0.5s" }}
+					variants={pulse}
 				/>
 			</motion.div>
 
 			<motion.div
-				className="relative z-10 flex max-w-md flex-col items-center text-center"
-				variants={container}
-				initial="hidden"
 				animate="visible"
+				className="relative z-10 flex max-w-md flex-col items-center text-center"
+				initial="hidden"
+				variants={container}
 			>
 				{/* Icon */}
 				<motion.div
 					className="mb-6 flex size-24 items-center justify-center rounded-2xl border border-border/50 bg-muted/50"
 					variants={item}
 				>
-					<motion.div variants={float} animate="animate">
+					<motion.div animate="animate" variants={float}>
 						<SearchX className="size-12 text-[#00e5a0]" strokeWidth={1.5} />
 					</motion.div>
 				</motion.div>
 
 				{/* 404 */}
 				<motion.h1
-					className="font-mono text-7xl font-bold tracking-tighter text-foreground sm:text-8xl"
+					className="font-bold font-mono text-7xl text-foreground tracking-tighter sm:text-8xl"
 					variants={item}
 				>
 					404
@@ -108,7 +108,7 @@ export default function NotFound() {
 				</motion.p>
 
 				<motion.p
-					className="mt-2 max-w-sm text-sm text-muted-foreground/80"
+					className="mt-2 max-w-sm text-muted-foreground/80 text-sm"
 					variants={item}
 				>
 					The page you’re looking for doesn’t exist or has been moved.
@@ -116,12 +116,12 @@ export default function NotFound() {
 
 				<motion.div className="mt-10" variants={item}>
 					<Link
-						href="/"
 						className={cn(
-							"inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold",
+							"inline-flex items-center gap-2 rounded-lg px-5 py-3 font-semibold text-sm",
 							"bg-[#00e5a0] text-black transition-colors hover:bg-[#00e5a0]/90",
 							"dark:bg-[#00e5a0] dark:text-black dark:hover:bg-[#00e5a0]/90",
 						)}
+						href="/"
 					>
 						<Home className="size-4" />
 						Back to home

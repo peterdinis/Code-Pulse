@@ -1,8 +1,16 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { index, pgTable, text, integer, boolean, timestamp, serial } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import {
+	boolean,
+	index,
+	integer,
+	pgTable,
+	serial,
+	text,
+	timestamp,
+} from "drizzle-orm/pg-core";
 
 /**
  * Table name prefix for multi-project schema (code-pulse_*).
@@ -16,7 +24,9 @@ export const posts = pgTable(
 		id: serial("id").primaryKey(),
 		name: text("name"),
 		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-		updatedAt: timestamp("updated_at", { mode: "date" }).$onUpdate(() => new Date()),
+		updatedAt: timestamp("updated_at", { mode: "date" }).$onUpdate(
+			() => new Date(),
+		),
 	},
 	(t) => [index("name_idx").on(t.name)],
 );
@@ -66,8 +76,12 @@ export const account = pgTable(
 		accessToken: text("access_token"),
 		refreshToken: text("refresh_token"),
 		idToken: text("id_token"),
-		accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
-		refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: "date" }),
+		accessTokenExpiresAt: timestamp("access_token_expires_at", {
+			mode: "date",
+		}),
+		refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+			mode: "date",
+		}),
 		scope: text("scope"),
 		password: text("password"),
 		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
