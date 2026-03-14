@@ -1,59 +1,48 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
-import { index, sqliteTableCreator, text, integer } from "drizzle-orm/sqlite-core";
+import { index, pgTable, text, integer, boolean, timestamp, serial } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 /**
- * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
- * database instance for multiple projects.
- *
+ * Table name prefix for multi-project schema (code-pulse_*).
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = sqliteTableCreator((name) => `code-pulse_${name}`);
+const prefix = (name: string) => `code-pulse_${name}`;
 
-export const posts = createTable(
-	"post",
-	(d) => ({
-		id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-		name: d.text({ length: 256 }),
-		createdAt: d
-			.integer({ mode: "timestamp" })
-			.default(sql`(unixepoch())`)
-			.notNull(),
-		updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
-	}),
+export const posts = pgTable(
+	prefix("post"),
+	{
+		id: serial("id").primaryKey(),
+		name: text("name"),
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { mode: "date" }).$onUpdate(() => new Date()),
+	},
 	(t) => [index("name_idx").on(t.name)],
 );
 
-export const user = createTable("user", {
+export const user = pgTable(prefix("user"), {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
-	emailVerified: integer("email_verified", { mode: "boolean" })
-		.default(false)
-		.notNull(),
+	emailVerified: boolean("email_verified").default(false).notNull(),
 	image: text("image"),
-	createdAt: integer("created_at", { mode: "timestamp_ms" })
-		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+	createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: "date" })
+		.defaultNow()
 		.$onUpdate(() => new Date())
 		.notNull(),
 });
 
-export const session = createTable(
-	"session",
+export const session = pgTable(
+	prefix("session"),
 	{
 		id: text("id").primaryKey(),
-		expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+		expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
 		token: text("token").notNull().unique(),
-		createdAt: integer("created_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 		ipAddress: text("ip_address"),
@@ -65,8 +54,8 @@ export const session = createTable(
 	(table) => [index("session_userId_idx").on(table.userId)],
 );
 
-export const account = createTable(
-	"account",
+export const account = pgTable(
+	prefix("account"),
 	{
 		id: text("id").primaryKey(),
 		accountId: text("account_id").notNull(),
@@ -77,44 +66,37 @@ export const account = createTable(
 		accessToken: text("access_token"),
 		refreshToken: text("refresh_token"),
 		idToken: text("id_token"),
-		accessTokenExpiresAt: integer("access_token_expires_at", {
-			mode: "timestamp_ms",
-		}),
-		refreshTokenExpiresAt: integer("refresh_token_expires_at", {
-			mode: "timestamp_ms",
-		}),
+		accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
+		refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: "date" }),
 		scope: text("scope"),
 		password: text("password"),
-		createdAt: integer("created_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
 	(table) => [index("account_userId_idx").on(table.userId)],
 );
 
-export const verification = createTable(
-	"verification",
+export const verification = pgTable(
+	prefix("verification"),
 	{
 		id: text("id").primaryKey(),
 		identifier: text("identifier").notNull(),
 		value: text("value").notNull(),
-		expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-		createdAt: integer("created_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const repository = createTable(
-	"repository",
+export const repository = pgTable(
+	prefix("repository"),
 	{
 		id: text("id").primaryKey(),
 		userId: text("user_id")
@@ -126,22 +108,20 @@ export const repository = createTable(
 		url: text("url"),
 		githubRepoId: text("github_repo_id"),
 		defaultBranch: text("default_branch"),
-		createdAt: integer("created_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
 	(table) => [
 		index("repository_userId_idx").on(table.userId),
 		index("repository_fullName_idx").on(table.fullName),
-	]
+	],
 );
 
-export const prReview = createTable(
-	"pr_review",
+export const prReview = pgTable(
+	prefix("pr_review"),
 	{
 		id: text("id").primaryKey(),
 		userId: text("user_id")
@@ -153,49 +133,45 @@ export const prReview = createTable(
 		prNumber: integer("pr_number").notNull(),
 		prUrl: text("pr_url"),
 		prTitle: text("pr_title"),
-		status: text("status", { enum: ["pending", "in_progress", "completed", "failed"] })
+		status: text("status", {
+			enum: ["pending", "in_progress", "completed", "failed"],
+		})
 			.default("pending")
 			.notNull(),
 		summary: text("summary"),
 		diffText: text("diff_text"),
 		aiReview: text("ai_review"),
-		createdAt: integer("created_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { mode: "date" })
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
 	(table) => [
 		index("pr_review_userId_idx").on(table.userId),
 		index("pr_review_repositoryId_idx").on(table.repositoryId),
-	]
+	],
 );
 
-export const userSettings = createTable(
-	"user_settings",
-	{
-		userId: text("user_id")
-			.primaryKey()
-			.references(() => user.id, { onDelete: "cascade" }),
-		aiReviewLimit: integer("ai_review_limit", { mode: "number" }),
-		/** AI provider for code reviews: "openai" (ChatGPT) or "gemini" */
-		aiProvider: text("ai_provider", { enum: ["openai", "gemini"] }),
-		/** User's OpenAI API key (optional; falls back to OPENAI_API_KEY env if not set) */
-		openaiApiKey: text("openai_api_key"),
-		/** User's Google Gemini API key */
-		geminiApiKey: text("gemini_api_key"),
-		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.$onUpdate(() => new Date())
-			.notNull(),
-	},
-	(table) => []
-);
+export const userSettings = pgTable(prefix("user_settings"), {
+	userId: text("user_id")
+		.primaryKey()
+		.references(() => user.id, { onDelete: "cascade" }),
+	aiReviewLimit: integer("ai_review_limit"),
+	/** AI provider for code reviews: "openai" (ChatGPT) or "gemini" */
+	aiProvider: text("ai_provider", { enum: ["openai", "gemini"] }),
+	/** User's OpenAI API key (optional; falls back to OPENAI_API_KEY env if not set) */
+	openaiApiKey: text("openai_api_key"),
+	/** User's Google Gemini API key */
+	geminiApiKey: text("gemini_api_key"),
+	updatedAt: timestamp("updated_at", { mode: "date" })
+		.defaultNow()
+		.$onUpdate(() => new Date())
+		.notNull(),
+});
 
-export const notification = createTable(
-	"notification",
+export const notification = pgTable(
+	prefix("notification"),
 	{
 		id: text("id").primaryKey(),
 		userId: text("user_id")
@@ -205,15 +181,13 @@ export const notification = createTable(
 		title: text("title").notNull(),
 		body: text("body"),
 		relatedId: text("related_id"),
-		readAt: integer("read_at", { mode: "timestamp_ms" }),
-		createdAt: integer("created_at", { mode: "timestamp_ms" })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
+		readAt: timestamp("read_at", { mode: "date" }),
+		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 	},
 	(table) => [
 		index("notification_userId_idx").on(table.userId),
 		index("notification_readAt_idx").on(table.readAt),
-	]
+	],
 );
 
 export const userRelations = relations(user, ({ one, many }) => ({
