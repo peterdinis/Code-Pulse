@@ -1,1 +1,0 @@
-ALTER TABLE `code-pulse_repository` ADD `url` text;
