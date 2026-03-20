@@ -62,7 +62,7 @@ export function PaginationBar({
 				>
 					<ChevronLeft className="h-4 w-4" />
 				</button>
-				<span className="min-w-[7rem] text-center text-[13px] text-muted-foreground">
+				<span className="min-w-28 text-center text-[13px] text-muted-foreground">
 					Page <span className="font-medium text-foreground">{page}</span> of{" "}
 					<span className="font-medium text-foreground">{totalPages}</span>
 				</span>

@@ -88,7 +88,7 @@ function DashboardContent({
 	return (
 		<div className="flex min-h-screen bg-background font-sans text-foreground antialiased">
 			{/* Sidebar */}
-			<aside className="flex w-[260px] shrink-0 flex-col border-border border-r bg-card">
+			<aside className="flex w-65 shrink-0 flex-col border-border border-r bg-card">
 				<div className="flex items-center justify-between gap-2 border-border border-b p-4">
 					<Link
 						className="flex items-center gap-2 text-[13px] text-muted-foreground transition-colors hover:text-primary"
@@ -642,7 +642,7 @@ function ReviewsSection({
 						<label className="sr-only" htmlFor="review-search">
 							Search PR reviews
 						</label>
-						<div className="relative min-w-[200px] max-w-sm flex-1">
+						<div className="relative min-w-50 max-w-sm flex-1">
 							<Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 							<input
 								className="w-full rounded-lg border border-input bg-background py-2 pr-4 pl-9 text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -1181,7 +1181,7 @@ function ReviewDetailPanel({
 						review&quot; to analyze.
 					</p>
 					<textarea
-						className="h-40 min-h-[120px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+						className="h-40 min-h-30 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 						onChange={(e) => setDiffText(e.target.value)}
 						placeholder="Paste git diff or patch content…"
 						spellCheck={false}

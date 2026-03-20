@@ -32,7 +32,7 @@ export default function DocsPage() {
 				</a>
 			</header>
 
-			<main className="mx-auto max-w-[720px] px-5 py-16 md:px-10">
+			<main className="mx-auto max-w-180 px-5 py-16 md:px-10">
 				<h1 className="mb-2 font-extrabold font-sans text-3xl text-white tracking-tight md:text-4xl">
 					Documentation
 				</h1>

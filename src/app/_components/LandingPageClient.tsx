@@ -274,7 +274,7 @@ export function LandingPageClient() {
 
 			<div className="scanline overflow-x-hidden bg-[#0a0c0f] font-mono text-[#c9d1d9] leading-normal antialiased selection:bg-[#00e5a0]/30 selection:text-white">
 				<motion.nav
-					className="fixed top-0 right-0 left-0 z-[100] flex h-14 items-center justify-between border-[#1e2733] border-b px-5 backdrop-blur-xl md:px-10"
+					className="fixed top-0 right-0 left-0 z-100 flex h-14 items-center justify-between border-[#1e2733] border-b px-5 backdrop-blur-xl md:px-10"
 					style={{
 						backgroundColor:
 							navBg as unknown as React.CSSProperties["backgroundColor"],
@@ -331,9 +331,9 @@ export function LandingPageClient() {
 					</div>
 				</motion.nav>
 
-				<section className="relative mx-auto grid min-h-screen max-w-[1200px] grid-cols-1 items-center gap-10 px-5 pt-24 pb-16 md:px-10 lg:grid-cols-2 lg:gap-16">
+				<section className="relative mx-auto grid min-h-screen max-w-300 grid-cols-1 items-center gap-10 px-5 pt-24 pb-16 md:px-10 lg:grid-cols-2 lg:gap-16">
 					<motion.div
-						className="hero-glow-radial pointer-events-none absolute top-[20%] -left-[10%] h-[600px] w-[600px] rounded-full"
+						className="hero-glow-radial pointer-events-none absolute top-[20%] -left-[10%] h-150 w-150 rounded-full"
 						style={{ y: heroGlowYSpring }}
 					/>
 					<div className="relative z-10">
@@ -362,13 +362,13 @@ export function LandingPageClient() {
 						</motion.h1>
 						<motion.div
 							animate={{ opacity: 1 }}
-							className="mb-7 min-h-[2rem] font-normal text-[#00e5a0] text-[clamp(1rem,2.5vw,1.4rem)]"
+							className="mb-7 min-h-8 font-normal text-[#00e5a0] text-[clamp(1rem,2.5vw,1.4rem)]"
 							initial={{ opacity: 0 }}
 							transition={{ duration: 0.4, delay: 0.5 }}
 						>
 							$ {typed}
 							<span
-								className="ml-[2px] inline-block h-[1.1em] w-[3px] bg-[#00e5a0] align-text-bottom"
+								className="ml-0.5 inline-block h-[1.1em] w-0.75 bg-[#00e5a0] align-text-bottom"
 								style={{
 									opacity: cursorVisible ? 1 : 0,
 									transition: "opacity 0.1s",
@@ -377,7 +377,7 @@ export function LandingPageClient() {
 						</motion.div>
 						<motion.p
 							animate={{ opacity: 1, y: 0 }}
-							className="mb-10 max-w-[460px] text-[#6e7681] text-[13px] leading-relaxed md:text-[15px]"
+							className="mb-10 max-w-115 text-[#6e7681] text-[13px] leading-relaxed md:text-[15px]"
 							initial={{ opacity: 0, y: 16 }}
 							transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
 						>
@@ -447,7 +447,7 @@ export function LandingPageClient() {
 													ease: "easeOut",
 												}}
 											>
-												<span className="min-w-[1.5rem] select-none text-right text-[#3d4b5c]">
+												<span className="min-w-6 select-none text-right text-[#3d4b5c]">
 													{line.n}
 												</span>
 												<span
@@ -501,7 +501,7 @@ export function LandingPageClient() {
 				</div>
 
 				<section
-					className="mx-auto max-w-[1100px] px-5 py-24 md:px-10"
+					className="mx-auto max-w-275 px-5 py-24 md:px-10"
 					id="features"
 				>
 					<motion.p
@@ -566,7 +566,7 @@ export function LandingPageClient() {
 						Ship better code today.
 					</motion.h2>
 					<motion.p
-						className="relative z-10 mx-auto mb-10 max-w-[500px] text-[#6e7681] text-[14px] leading-relaxed md:text-base"
+						className="relative z-10 mx-auto mb-10 max-w-125 text-[#6e7681] text-[14px] leading-relaxed md:text-base"
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.25 }}
 						viewport={{ once: true }}
@@ -663,7 +663,7 @@ function SignInDropdown() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="end"
-				className="w-[240px] rounded-xl border-[#1e2733] bg-[#0f1218] p-1.5 text-[#c9d1d9] shadow-2xl focus:outline-none"
+				className="w-60 rounded-xl border-[#1e2733] bg-[#0f1218] p-1.5 text-[#c9d1d9] shadow-2xl focus:outline-none"
 			>
 				<DropdownMenuGroup>
 					<DropdownMenuLabel className="px-3 py-2 font-mono text-[#6e7681] text-[10px] uppercase tracking-widest">

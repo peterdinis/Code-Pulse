@@ -44,7 +44,7 @@ export function SignUpContent() {
 	}
 
 	return (
-		<div className="w-full max-w-[380px] text-center">
+		<div className="w-full max-w-95 text-center">
 			<h1 className="mb-2 font-extrabold font-sans text-2xl text-white tracking-tight md:text-3xl">
 				Create your account
 			</h1>

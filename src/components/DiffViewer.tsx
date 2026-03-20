@@ -27,7 +27,7 @@ export function DiffViewer({
 	if (lines.length === 0) {
 		return (
 			<div
-				className={`flex min-h-[120px] items-center justify-center rounded-lg border border-border bg-muted/20 font-mono text-[13px] text-muted-foreground ${className ?? ""}`}
+				className={`flex min-h-30 items-center justify-center rounded-lg border border-border bg-muted/20 font-mono text-[13px] text-muted-foreground ${className ?? ""}`}
 			>
 				No diff to display. Paste a git diff above and save.
 			</div>
@@ -41,7 +41,7 @@ export function DiffViewer({
 			<div className="min-w-max">
 				{lines.map((line, i) => (
 					<div
-						className={`flex border-[var(--code-border)]/50 border-b last:border-b-0 ${
+						className={`flex border-(--code-border)/50 border-b last:border-b-0 ${
 							line.type === "add"
 								? "diff-add"
 								: line.type === "remove"
@@ -50,7 +50,7 @@ export function DiffViewer({
 						}`}
 						key={i}
 					>
-						<span className="w-8 shrink-0 select-none border-[var(--code-border)]/50 border-r py-0.5 pr-2 text-right opacity-60">
+						<span className="w-8 shrink-0 select-none border-(--code-border)/50 border-r py-0.5 pr-2 text-right opacity-60">
 							{line.type === "add" ? "+" : line.type === "remove" ? "-" : " "}
 						</span>
 						<span className="whitespace-pre-wrap break-all py-0.5 pl-2">

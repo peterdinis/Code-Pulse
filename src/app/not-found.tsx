@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Home, SearchX } from "lucide-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
@@ -66,13 +66,13 @@ export default function NotFound() {
 				<motion.div
 					animate="animate"
 					className="absolute top-1/3 -left-1/4 h-96 w-96 rounded-full bg-[#00e5a0]/10 blur-3xl"
-					variants={pulse}
+					variants={pulse as unknown as Variants}
 				/>
 				<motion.div
 					animate="animate"
 					className="absolute -right-1/4 bottom-1/3 h-80 w-80 rounded-full bg-[#00e5a0]/5 blur-3xl"
 					style={{ transitionDelay: "0.5s" }}
-					variants={pulse}
+					variants={pulse as unknown as Variants}
 				/>
 			</motion.div>
 
@@ -85,9 +85,9 @@ export default function NotFound() {
 				{/* Icon */}
 				<motion.div
 					className="mb-6 flex size-24 items-center justify-center rounded-2xl border border-border/50 bg-muted/50"
-					variants={item}
+					variants={item as unknown as Variants}
 				>
-					<motion.div animate="animate" variants={float}>
+					<motion.div animate="animate" variants={float as unknown as Variants}>
 						<SearchX className="size-12 text-[#00e5a0]" strokeWidth={1.5} />
 					</motion.div>
 				</motion.div>
@@ -95,26 +95,26 @@ export default function NotFound() {
 				{/* 404 */}
 				<motion.h1
 					className="font-bold font-mono text-7xl text-foreground tracking-tighter sm:text-8xl"
-					variants={item}
+					variants={item as unknown as Variants}
 				>
 					404
 				</motion.h1>
 
 				<motion.p
 					className="mt-3 text-lg text-muted-foreground sm:text-xl"
-					variants={item}
+					variants={item as unknown as Variants}
 				>
 					Page not found
 				</motion.p>
 
 				<motion.p
 					className="mt-2 max-w-sm text-muted-foreground/80 text-sm"
-					variants={item}
+					variants={item as unknown as Variants}
 				>
 					The page you’re looking for doesn’t exist or has been moved.
 				</motion.p>
 
-				<motion.div className="mt-10" variants={item}>
+				<motion.div className="mt-10" variants={item as unknown as Variants}>
 					<Link
 						className={cn(
 							"inline-flex items-center gap-2 rounded-lg px-5 py-3 font-semibold text-sm",
