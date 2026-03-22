@@ -1,9 +1,8 @@
-import { unstable_cache } from "next/cache";
+import { and, count, eq, like } from "drizzle-orm";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { z } from "zod";
-import { revalidateTag } from "next/cache";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { repository } from "~/server/db/schema";
-import { eq, and, like, count } from "drizzle-orm";
 
 const idSchema = z.string().min(1);
 
@@ -17,7 +16,13 @@ export const repositoryRouter = createTRPCRouter({
 				userId: z.string().min(1),
 				search: z.string().optional(),
 				page: z.number().int().min(1).optional().default(1),
-				pageSize: z.number().int().min(1).max(PAGE_SIZE_MAX).optional().default(PAGE_SIZE_DEFAULT),
+				pageSize: z
+					.number()
+					.int()
+					.min(1)
+					.max(PAGE_SIZE_MAX)
+					.optional()
+					.default(PAGE_SIZE_DEFAULT),
 			}),
 		)
 		.query(async ({ ctx, input }) => {
@@ -36,7 +41,8 @@ export const repositoryRouter = createTRPCRouter({
 						const term = `%${input.search.trim()}%`;
 						conditions.push(like(repository.fullName, term));
 					}
-					const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+					const whereClause =
+						conditions.length > 1 ? and(...conditions) : conditions[0];
 
 					const [totalResult] = await ctx.db
 						.select({ count: count() })
@@ -79,7 +85,7 @@ export const repositoryRouter = createTRPCRouter({
 				url: z.string().url().optional().or(z.literal("")),
 				githubRepoId: z.string().optional(),
 				defaultBranch: z.string().optional(),
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			revalidateTag("repository-list");
@@ -104,7 +110,7 @@ export const repositoryRouter = createTRPCRouter({
 			await ctx.db
 				.delete(repository)
 				.where(
-					and(eq(repository.id, input.id), eq(repository.userId, input.userId))
+					and(eq(repository.id, input.id), eq(repository.userId, input.userId)),
 				);
 			return { ok: true };
 		}),

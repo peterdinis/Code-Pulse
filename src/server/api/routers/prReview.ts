@@ -1,9 +1,9 @@
-import { unstable_cache, revalidateTag } from "next/cache";
+import { and, count, eq, like, or, type SQL } from "drizzle-orm";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { prReview, notification, userSettings } from "~/server/db/schema";
-import { eq, and, like, or, count, type SQL } from "drizzle-orm";
 import { runAiReview } from "~/server/ai-review";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { notification, prReview, userSettings } from "~/server/db/schema";
 
 const statusEnum = z.enum(["pending", "in_progress", "completed", "failed"]);
 
@@ -18,10 +18,7 @@ export const prReviewRouter = createTRPCRouter({
 				.select()
 				.from(prReview)
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId)
-					)
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				)
 				.limit(1);
 			return row ?? null;
@@ -34,7 +31,13 @@ export const prReviewRouter = createTRPCRouter({
 				status: statusEnum.optional(),
 				search: z.string().optional(),
 				page: z.number().int().min(1).optional().default(1),
-				pageSize: z.number().int().min(1).max(PAGE_SIZE_MAX).optional().default(PAGE_SIZE_DEFAULT),
+				pageSize: z
+					.number()
+					.int()
+					.min(1)
+					.max(PAGE_SIZE_MAX)
+					.optional()
+					.default(PAGE_SIZE_DEFAULT),
 			}),
 		)
 		.query(async ({ ctx, input }) => {
@@ -49,7 +52,9 @@ export const prReviewRouter = createTRPCRouter({
 
 			return unstable_cache(
 				async () => {
-					const conditions: Parameters<typeof and>[0][] = [eq(prReview.userId, input.userId)];
+					const conditions: Parameters<typeof and>[0][] = [
+						eq(prReview.userId, input.userId),
+					];
 					if (input.status) {
 						conditions.push(eq(prReview.status, input.status));
 					}
@@ -60,10 +65,16 @@ export const prReviewRouter = createTRPCRouter({
 						if (Number.isNaN(num)) {
 							conditions.push(like(prReview.prTitle, termLike));
 						} else {
-							conditions.push(or(eq(prReview.prNumber, num), like(prReview.prTitle, termLike))!);
+							conditions.push(
+								or(
+									eq(prReview.prNumber, num),
+									like(prReview.prTitle, termLike),
+								)!,
+							);
 						}
 					}
-					const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+					const whereClause =
+						conditions.length > 1 ? and(...conditions) : conditions[0];
 
 					const [totalResult] = await ctx.db
 						.select({ count: count() })
@@ -101,13 +112,13 @@ export const prReviewRouter = createTRPCRouter({
 			z.object({
 				userId: z.string().min(1),
 				repositoryId: z.string().min(1),
-			})
+			}),
 		)
 		.query(async ({ ctx, input }) => {
 			return ctx.db.query.prReview.findMany({
 				where: and(
 					eq(prReview.userId, input.userId),
-					eq(prReview.repositoryId, input.repositoryId)
+					eq(prReview.repositoryId, input.repositoryId),
 				),
 				orderBy: (r, { desc }) => [desc(r.createdAt)],
 			});
@@ -119,9 +130,12 @@ export const prReviewRouter = createTRPCRouter({
 				userId: z.string().min(1),
 				repositoryId: z.string().optional(),
 				prNumber: z.number().int().positive(),
-				prUrl: z.string().optional().transform((v) => (v?.trim() ? v.trim() : undefined)),
+				prUrl: z
+					.string()
+					.optional()
+					.transform((v) => (v?.trim() ? v.trim() : undefined)),
 				prTitle: z.string().optional(),
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			revalidateTag("pr-review-list");
@@ -145,10 +159,7 @@ export const prReviewRouter = createTRPCRouter({
 			await ctx.db
 				.delete(prReview)
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId),
-					),
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				);
 			return { ok: true };
 		}),
@@ -160,7 +171,7 @@ export const prReviewRouter = createTRPCRouter({
 				userId: z.string().min(1),
 				status: statusEnum,
 				summary: z.string().optional(),
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			revalidateTag("pr-review-list");
@@ -171,10 +182,7 @@ export const prReviewRouter = createTRPCRouter({
 					...(input.summary !== undefined && { summary: input.summary }),
 				})
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId)
-					)
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				);
 			return { ok: true };
 		}),
@@ -185,17 +193,14 @@ export const prReviewRouter = createTRPCRouter({
 				id: z.string().min(1),
 				userId: z.string().min(1),
 				diffText: z.string(),
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db
 				.update(prReview)
 				.set({ diffText: input.diffText || null })
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId)
-					)
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				);
 			return { ok: true };
 		}),
@@ -292,13 +297,10 @@ export const prReviewRouter = createTRPCRouter({
 				geminiApiKey: updates.geminiApiKey ?? existing?.geminiApiKey ?? null,
 			};
 
-			await ctx.db
-				.insert(userSettings)
-				.values(merged)
-				.onConflictDoUpdate({
-					target: userSettings.userId,
-					set: updates,
-				});
+			await ctx.db.insert(userSettings).values(merged).onConflictDoUpdate({
+				target: userSettings.userId,
+				set: updates,
+			});
 			return { ok: true };
 		}),
 
@@ -310,10 +312,7 @@ export const prReviewRouter = createTRPCRouter({
 				.select()
 				.from(prReview)
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId)
-					)
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				)
 				.limit(1);
 			if (!review) throw new Error("Review not found");
@@ -349,10 +348,7 @@ export const prReviewRouter = createTRPCRouter({
 				.update(prReview)
 				.set({ status: "in_progress" })
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId)
-					)
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				);
 
 			const provider = settings?.aiProvider === "gemini" ? "gemini" : "openai";
@@ -377,10 +373,7 @@ export const prReviewRouter = createTRPCRouter({
 					summary: aiReviewText.slice(0, 500),
 				})
 				.where(
-					and(
-						eq(prReview.id, input.id),
-						eq(prReview.userId, input.userId)
-					)
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				);
 
 			const notifId = crypto.randomUUID();

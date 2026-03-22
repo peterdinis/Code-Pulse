@@ -6,17 +6,17 @@ import { env } from "~/env";
  * GET /api/auth/callback-url
  */
 export async function GET() {
-  const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
-  const callbackURL =
-    env.GITHUB_CALLBACK_URL?.replace(/\/$/, "") ??
-    `${baseURL}/api/auth/callback/github`;
+	const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
+	const callbackURL =
+		env.GITHUB_CALLBACK_URL?.replace(/\/$/, "") ??
+		`${baseURL}/api/auth/callback/github`;
 
-  return Response.json(
-    {
-      callbackURL,
-      message:
-        "Copy the callbackURL value above and paste it into GitHub OAuth App → Authorization callback URL. It must match exactly (no trailing slash).",
-    },
-    { headers: { "Cache-Control": "no-store" } }
-  );
+	return Response.json(
+		{
+			callbackURL,
+			message:
+				"Copy the callbackURL value above and paste it into GitHub OAuth App → Authorization callback URL. It must match exactly (no trailing slash).",
+		},
+		{ headers: { "Cache-Control": "no-store" } },
+	);
 }

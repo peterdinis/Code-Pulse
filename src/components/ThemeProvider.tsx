@@ -3,14 +3,14 @@
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange={false}
-    >
-      {children}
-    </NextThemesProvider>
-  );
+	return (
+		<NextThemesProvider
+			attribute="class"
+			defaultTheme="dark"
+			disableTransitionOnChange={false}
+			enableSystem
+		>
+			{children}
+		</NextThemesProvider>
+	);
 }

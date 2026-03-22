@@ -85,7 +85,10 @@ Provide your structured review:`;
 	return MOCK_RESPONSE;
 }
 
-async function runOpenAiReview(apiKey: string, userPrompt: string): Promise<string> {
+async function runOpenAiReview(
+	apiKey: string,
+	userPrompt: string,
+): Promise<string> {
 	try {
 		const res = await fetch("https://api.openai.com/v1/chat/completions", {
 			method: "POST",
@@ -122,7 +125,10 @@ async function runOpenAiReview(apiKey: string, userPrompt: string): Promise<stri
 
 const GEMINI_MODEL = "gemini-1.5-flash";
 
-async function runGeminiReview(apiKey: string, userPrompt: string): Promise<string> {
+async function runGeminiReview(
+	apiKey: string,
+	userPrompt: string,
+): Promise<string> {
 	try {
 		const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 		const res = await fetch(url, {
