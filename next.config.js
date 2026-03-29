@@ -11,7 +11,7 @@ const config = {
 	experimental: {
 		optimizeCss: true
 	},
-	transpilePackages: ["lucide-react"]
+	transpilePackages: ["lucide-react", "framer-motion", "next-themes"]
 };
 
 export default config;
