@@ -18,8 +18,8 @@ export default function AuthCallbackPage() {
 	}, [isPending, router]);
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-[#0a0c0f]">
-			<p className="text-[#6e7681] text-sm">Signing you in…</p>
+		<div className="flex min-h-screen items-center justify-center bg-background">
+			<p className="text-muted-foreground text-sm">Signing you in…</p>
 		</div>
 	);
 }

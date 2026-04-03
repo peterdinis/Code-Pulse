@@ -10,11 +10,11 @@ export default function DocsError({
 	reset: () => void;
 }) {
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0c0f] px-5 font-mono text-[#c9d1d9]">
-			<h1 className="mb-2 font-bold font-sans text-white text-xl">
+		<div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 font-mono text-foreground">
+			<h1 className="mb-2 font-bold font-sans text-foreground text-xl">
 				Something went wrong
 			</h1>
-			<p className="mb-4 max-w-md text-center text-[#6e7681] text-[13px]">
+			<p className="mb-4 max-w-md text-center text-muted-foreground text-[13px]">
 				{error.message || "An error occurred loading the docs."}
 			</p>
 			<div className="flex gap-3">
@@ -26,7 +26,7 @@ export default function DocsError({
 					Try again
 				</button>
 				<Link
-					className="rounded-lg border border-[#1e2733] px-4 py-2 text-[#6e7681] text-[13px] hover:border-[#00e5a0]/40 hover:text-[#00e5a0]"
+					className="rounded-lg border border-border px-4 py-2 text-muted-foreground text-[13px] hover:border-[#00e5a0]/40 hover:text-[#00e5a0]"
 					href="/"
 				>
 					Back to home

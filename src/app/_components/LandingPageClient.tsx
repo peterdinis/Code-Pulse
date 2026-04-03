@@ -102,7 +102,7 @@ function StatItem({ num, label }: { num: string; label: string }) {
 			<span className="block font-extrabold font-syne text-3xl text-[#00e5a0] leading-tight md:text-4xl">
 				{display}
 			</span>
-			<span className="mt-1 font-mono text-[#6e7681] text-[10px] uppercase tracking-widest md:text-xs">
+			<span className="mt-1 font-mono text-[10px] text-muted-foreground uppercase tracking-widest md:text-xs">
 				{label}
 			</span>
 		</motion.div>
@@ -120,7 +120,7 @@ function FeatureCard({
 }) {
 	return (
 		<motion.div
-			className="cursor-default rounded-lg border border-[#1e2733] bg-[#0f1218] p-7 transition-all duration-200"
+			className="cursor-default rounded-lg border border-border bg-card p-7 shadow-sm transition-all duration-200 dark:shadow-none"
 			variants={cardVariant as unknown as Variants}
 			whileHover={{
 				y: -6,
@@ -137,10 +137,10 @@ function FeatureCard({
 			>
 				{icon}
 			</motion.div>
-			<div className="mb-2 font-bold font-syne text-base text-white">
+			<div className="mb-2 font-bold font-syne text-base text-foreground">
 				{title}
 			</div>
-			<p className="text-[#6e7681] text-xs leading-relaxed">{desc}</p>
+			<p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
 		</motion.div>
 	);
 }
@@ -186,11 +186,6 @@ export function LandingPageClient() {
 	const fullText = "ai-powered code review";
 
 	const { scrollY } = useScroll();
-	const navBg = useTransform(
-		scrollY,
-		[0, 60],
-		["rgba(10,12,15,0)", "rgba(10,12,15,0.92)"],
-	);
 	const heroGlowY = useTransform(scrollY, [0, 400], [0, 80]);
 	const heroGlowYSpring = useSpring(heroGlowY, { stiffness: 80, damping: 20 });
 
@@ -242,391 +237,279 @@ export function LandingPageClient() {
 	];
 
 	return (
-		<>
-			<style global jsx>{`
-        :root { --bg: #0a0c0f; --green: #00e5a0; }
-        body { background-color: var(--bg); color: #c9d1d9; -webkit-font-smoothing: antialiased; }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(0.7); }
-        }
-        .animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
-        .hero-glow-radial {
-          background: radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%);
-          filter: blur(40px);
-        }
-        .cta-section-radial::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(0,229,160,0.07) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .scanline::before {
-          content: '';
-          position: fixed;
-          inset: 0;
-          background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
-          pointer-events: none;
-          z-index: 9999;
-        }
-      `}</style>
-
-			<div className="scanline overflow-x-hidden bg-[#0a0c0f] font-mono text-[#c9d1d9] leading-normal antialiased selection:bg-[#00e5a0]/30 selection:text-white">
-				<motion.nav
-					className="fixed top-0 right-0 left-0 z-100 flex h-14 items-center justify-between border-[#1e2733] border-b px-5 backdrop-blur-xl md:px-10"
-					style={{
-						backgroundColor:
-							navBg as unknown as React.CSSProperties["backgroundColor"],
-					}}
+		<div className="scanline overflow-x-hidden bg-background font-mono text-foreground leading-normal antialiased selection:bg-[#00e5a0]/30 dark:selection:text-white">
+			<motion.nav className="fixed top-0 right-0 left-0 z-100 flex h-14 items-center justify-between border-border border-b bg-background/80 px-5 backdrop-blur-xl md:px-10 dark:bg-background/85">
+				<Link
+					className="flex items-center gap-2 font-extrabold font-syne text-[1.1rem] text-foreground tracking-tight"
+					href="/"
 				>
-					<Link
-						className="flex items-center gap-2 font-extrabold font-syne text-[1.1rem] text-white tracking-tight"
-						href="/"
-					>
-						<motion.span
-							animate={{ opacity: 1, x: 0 }}
-							className="h-2 w-2 animate-pulse-dot rounded-full bg-[#00e5a0] shadow-[0_0_8px_#00e5a0]"
-							initial={{ opacity: 0, x: -16 }}
-							transition={{ duration: 0.5, ease: "easeOut" }}
-						/>
-						CodePulse
-					</Link>
-
-					<motion.ul
-						animate="visible"
-						className="hidden list-none items-center gap-8 md:flex"
-						initial="hidden"
-						variants={staggerContainer}
-					>
-						<motion.li custom={0} variants={fadeIn as unknown as Variants}>
-							<a
-								className="text-[#6e7681] text-[13px] tracking-wide transition-colors hover:text-[#00e5a0]"
-								href="#features"
-							>
-								Features
-							</a>
-						</motion.li>
-						<motion.li custom={0.08} variants={fadeIn as unknown as Variants}>
-							<a
-								className="text-[#6e7681] text-[13px] tracking-wide transition-colors hover:text-[#00e5a0]"
-								href="#pricing"
-							>
-								Pricing
-							</a>
-						</motion.li>
-						<motion.li custom={0.16} variants={fadeIn as unknown as Variants}>
-							<Link
-								className="text-[#6e7681] text-[13px] tracking-wide transition-colors hover:text-[#00e5a0]"
-								href="/docs"
-							>
-								Docs
-							</Link>
-						</motion.li>
-					</motion.ul>
-
-					<div className="flex items-center gap-2">
-						<ThemeToggle />
-						<NavAuthActions />
-					</div>
-				</motion.nav>
-
-				<section className="relative mx-auto grid min-h-screen max-w-300 grid-cols-1 items-center gap-10 px-5 pt-24 pb-16 md:px-10 lg:grid-cols-2 lg:gap-16">
-					<motion.div
-						className="hero-glow-radial pointer-events-none absolute top-[20%] -left-[10%] h-150 w-150 rounded-full"
-						style={{ y: heroGlowYSpring }}
+					<motion.span
+						animate={{ opacity: 1, x: 0 }}
+						className="h-2 w-2 animate-pulse-dot rounded-full bg-[#00e5a0] shadow-[0_0_8px_#00e5a0]"
+						initial={{ opacity: 0, x: -16 }}
+						transition={{ duration: 0.5, ease: "easeOut" }}
 					/>
-					<div className="relative z-10">
-						<motion.div
-							animate={{ opacity: 1, y: 0, scale: 1 }}
-							className="mb-7 inline-flex items-center gap-2 rounded border border-[#00e5a0]/30 bg-[#00e5a0]/10 px-3 py-1 text-[#00e5a0] text-[10px] uppercase tracking-widest md:text-[11px]"
-							initial={{ opacity: 0, y: 16, scale: 0.95 }}
-							transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-						>
-							<span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-[#00e5a0] shadow-[0_0_6px_#00e5a0]" />
-							Now in public beta
-						</motion.div>
-						<motion.h1
-							animate={{ opacity: 1, y: 0 }}
-							className="mb-2 font-extrabold font-syne text-[clamp(2.4rem,5vw,3.6rem)] text-white leading-[1.05] tracking-tighter"
-							initial={{ opacity: 0, y: 24 }}
-							transition={{
-								duration: 0.65,
-								delay: 0.1,
-								ease: [0.22, 1, 0.36, 1],
-							}}
-						>
-							Code review,
-							<br />
-							reinvented.
-						</motion.h1>
-						<motion.div
-							animate={{ opacity: 1 }}
-							className="mb-7 min-h-8 font-normal text-[#00e5a0] text-[clamp(1rem,2.5vw,1.4rem)]"
-							initial={{ opacity: 0 }}
-							transition={{ duration: 0.4, delay: 0.5 }}
-						>
-							$ {typed}
-							<span
-								className="ml-0.5 inline-block h-[1.1em] w-0.75 bg-[#00e5a0] align-text-bottom"
-								style={{
-									opacity: cursorVisible ? 1 : 0,
-									transition: "opacity 0.1s",
-								}}
-							/>
-						</motion.div>
-						<motion.p
-							animate={{ opacity: 1, y: 0 }}
-							className="mb-10 max-w-115 text-[#6e7681] text-[13px] leading-relaxed md:text-[15px]"
-							initial={{ opacity: 0, y: 16 }}
-							transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-						>
-							CodePulse connects to your GitHub repositories and delivers
-							instant, actionable AI feedback on every pull request — so your
-							team ships faster with fewer bugs.
-						</motion.p>
-						<motion.div
-							animate="visible"
-							className="flex flex-wrap gap-4"
-							initial="hidden"
-							variants={staggerContainer}
-						>
-							<motion.div custom={0.4} variants={fadeUp as unknown as Variants}>
-								<SignInWithGitHubButton className="inline-flex items-center gap-2.5 rounded-md bg-white px-6 py-3 font-bold text-[#0a0c0f] text-[13px] shadow-none transition-all duration-150 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_6px_24px_rgba(255,255,255,0.15)] active:scale-[0.97] md:text-[14px]">
-									<Github className="h-5 w-5" />
-									Continue with GitHub
-								</SignInWithGitHubButton>
-							</motion.div>
-							<motion.a
-								className="inline-flex items-center gap-2 rounded-md border border-[#1e2733] bg-transparent px-6 py-3 text-[#6e7681] text-[13px] transition-all hover:border-[#00e5a0] hover:text-[#00e5a0] md:text-[14px]"
-								custom={0.5}
-								href="#features"
-								variants={fadeUp as unknown as Variants}
-								whileHover={{ scale: 1.03 }}
-								whileTap={{ scale: 0.97 }}
-							>
-								See how it works →
-							</motion.a>
-						</motion.div>
-					</div>
+					CodePulse
+				</Link>
 
-					<motion.div
-						animate={{ opacity: 1, x: 0, rotateY: 0 }}
-						className="relative hidden lg:block"
-						initial={{ opacity: 0, x: 40, rotateY: 4 }}
-						transition={{
-							duration: 0.8,
-							delay: 0.35,
-							ease: [0.22, 1, 0.36, 1],
-						}}
-						whileHover={{ scale: 1.015, transition: { duration: 0.3 } }}
-					>
-						<div className="overflow-hidden rounded-xl border border-[#1e2733] bg-[#0f1218] shadow-[0_0_0_1px_#1e2733,0_32px_64px_rgba(0,0,0,0.5),0_0_80px_rgba(0,229,160,0.04)]">
-							<div className="flex items-center gap-2 border-[#1e2733] border-b bg-[#151b24] px-4 py-3">
-								<div className="flex gap-1.5">
-									<div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-									<div className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
-									<div className="h-3 w-3 rounded-full bg-[#27c93f]" />
-								</div>
-								<div className="mx-auto text-[#6e7681] text-[11px] tracking-wide">
-									codepulse — review #142
-								</div>
-							</div>
-							<div className="p-6 text-[12px] leading-[1.8] md:text-[13px]">
-								<AnimatePresence>
-									{terminalReady &&
-										diffLines.map((line, i) => (
-											<motion.div
-												animate={{ opacity: 1, x: 0 }}
-												className="flex gap-4"
-												initial={{ opacity: 0, x: -10 }}
-												key={i}
-												transition={{
-													duration: 0.28,
-													delay: 0.7 + i * 0.07,
-													ease: "easeOut",
-												}}
-											>
-												<span className="min-w-6 select-none text-right text-[#3d4b5c]">
-													{line.n}
-												</span>
-												<span
-													className={
-														line.type === "add"
-															? "text-[#00e5a0]"
-															: line.type === "del"
-																? "text-[#ff7b7b] line-through opacity-60"
-																: "text-[#6e7681]"
-													}
-												>
-													{line.type === "add"
-														? "+ "
-														: line.type === "del"
-															? "- "
-															: "  "}
-													{line.code}
-												</span>
-											</motion.div>
-										))}
-								</AnimatePresence>
-								<motion.div
-									animate={{ opacity: 1, y: 0 }}
-									className="mt-4 rounded-r-lg border-[#00e5a0] border-l-2 bg-[#00e5a0]/10 p-4 text-[12px] leading-relaxed"
-									initial={{ opacity: 0, y: 10 }}
-									transition={{ duration: 0.5, delay: 1.65, ease: "easeOut" }}
-								>
-									<div className="mb-1.5 font-bold text-[#00e5a0] text-[11px] uppercase tracking-widest">
-										▸ CodePulse AI
-									</div>
-									<p className="text-[#c9d1d9]">
-										Security: the raw{" "}
-										<code className="px-1 text-[#f5a623]">id</code> parameter
-										was interpolated directly into the URL, enabling path
-										traversal. Wrapping it with{" "}
-										<code className="px-1 text-[#00e5a0]">
-											encodeURIComponent()
-										</code>{" "}
-										sanitises the input.
-									</p>
-								</motion.div>
-							</div>
-						</div>
-					</motion.div>
-				</section>
-
-				<div className="flex flex-wrap justify-center gap-10 border-[#1e2733] border-y bg-[#0f1218] px-5 py-8 lg:gap-24">
-					<StatItem label="Pull Requests Reviewed" num="12k+" />
-					<StatItem label="Teams Using CodePulse" num="340+" />
-					<StatItem label="Bug Detection Rate" num="94%" />
-				</div>
-
-				<section
-					className="mx-auto max-w-275 px-5 py-24 md:px-10"
-					id="features"
+				<motion.ul
+					animate="visible"
+					className="hidden list-none items-center gap-8 md:flex"
+					initial="hidden"
+					variants={staggerContainer}
 				>
-					<motion.p
-						className="mb-3 text-[#00e5a0] text-[11px] uppercase tracking-[0.2em]"
-						initial={{ opacity: 0, x: -12 }}
-						transition={{ duration: 0.4, ease: "easeOut" }}
-						viewport={{ once: true, margin: "-80px" }}
-						whileInView={{ opacity: 1, x: 0 }}
-					>
-						// why codepulse
-					</motion.p>
-					<motion.h2
-						className="mb-12 font-extrabold font-syne text-[clamp(1.8rem,4vw,2.5rem)] text-white tracking-tight"
-						initial={{ opacity: 0, y: 20 }}
-						transition={{
-							duration: 0.55,
-							delay: 0.08,
-							ease: [0.22, 1, 0.36, 1],
-						}}
-						viewport={{ once: true, margin: "-80px" }}
-						whileInView={{ opacity: 1, y: 0 }}
-					>
-						Everything your team needs.
-					</motion.h2>
-					<motion.div
-						className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
-						initial="hidden"
-						variants={staggerContainer}
-						viewport={{ once: true, margin: "-60px" }}
-						whileInView="visible"
-					>
-						{features.map((f) => (
-							<FeatureCard key={f.title} {...f} />
-						))}
-					</motion.div>
-				</section>
-
-				<motion.section
-					className="cta-section-radial relative mx-5 mb-24 overflow-hidden rounded-2xl border border-[#1e2733] bg-[#0f1218] p-10 text-center md:mx-10 md:p-16"
-					id="pricing"
-					initial={{ opacity: 0, y: 32 }}
-					transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-					viewport={{ once: true, margin: "-80px" }}
-					whileInView={{ opacity: 1, y: 0 }}
-				>
-					<motion.p
-						className="relative z-10 mb-4 text-[#00e5a0] text-[11px] uppercase tracking-[0.2em]"
-						initial={{ opacity: 0 }}
-						transition={{ delay: 0.2 }}
-						viewport={{ once: true }}
-						whileInView={{ opacity: 1 }}
-					>
-						get started
-					</motion.p>
-					<motion.h2
-						className="relative z-10 mb-4 font-extrabold font-syne text-[clamp(1.8rem,4vw,2.5rem)] text-white tracking-tight"
-						initial={{ opacity: 0, y: 16 }}
-						transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
-						viewport={{ once: true }}
-						whileInView={{ opacity: 1, y: 0 }}
-					>
-						Ship better code today.
-					</motion.h2>
-					<motion.p
-						className="relative z-10 mx-auto mb-10 max-w-125 text-[#6e7681] text-[14px] leading-relaxed md:text-base"
-						initial={{ opacity: 0 }}
-						transition={{ delay: 0.25 }}
-						viewport={{ once: true }}
-						whileInView={{ opacity: 1 }}
-					>
-						Free for open-source projects. No credit card required. Connect your
-						GitHub account and your first review happens in under 60 seconds.
-					</motion.p>
-					<motion.div
-						className="relative z-10"
-						initial={{ opacity: 0, scale: 0.95 }}
-						transition={{
-							duration: 0.4,
-							delay: 0.35,
-							type: "spring",
-							stiffness: 200,
-						}}
-						viewport={{ once: true }}
-						whileInView={{ opacity: 1, scale: 1 }}
-					>
-						<SignInWithGitHubButton className="inline-flex items-center gap-3 rounded-lg bg-white px-8 py-3.5 font-bold text-[#0a0c0f] text-sm shadow-none transition-all duration-300 hover:scale-105 hover:shadow-[0_8px_28px_rgba(255,255,255,0.18)] active:scale-[0.97] md:text-base">
-							<GithubIcon />
-							Start Free with GitHub
-						</SignInWithGitHubButton>
-					</motion.div>
-				</motion.section>
-
-				<motion.footer
-					className="flex flex-col items-center justify-between gap-4 border-[#1e2733] border-t px-5 py-8 text-[#6e7681] text-[12px] md:flex-row md:px-10"
-					initial={{ opacity: 0 }}
-					transition={{ duration: 0.5 }}
-					viewport={{ once: true }}
-					whileInView={{ opacity: 1 }}
-				>
-					<span>© {new Date().getFullYear()} CodePulse</span>
-					<nav className="flex flex-wrap items-center justify-center gap-4">
+					<motion.li custom={0} variants={fadeIn as unknown as Variants}>
+						<a
+							className="text-[13px] text-muted-foreground tracking-wide transition-colors hover:text-[#00e5a0]"
+							href="#features"
+						>
+							Features
+						</a>
+					</motion.li>
+					<motion.li custom={0.08} variants={fadeIn as unknown as Variants}>
 						<Link
-							className="transition-colors hover:text-[#00e5a0]"
+							className="text-[13px] text-muted-foreground tracking-wide transition-colors hover:text-[#00e5a0]"
 							href="/docs"
 						>
 							Docs
 						</Link>
-						<a
-							className="transition-colors hover:text-[#00e5a0]"
-							href="/#pricing"
+					</motion.li>
+				</motion.ul>
+
+				<div className="flex items-center gap-2">
+					<ThemeToggle />
+					<NavAuthActions />
+				</div>
+			</motion.nav>
+
+			<section className="relative mx-auto grid min-h-screen max-w-300 grid-cols-1 items-center gap-10 px-5 pt-24 pb-16 md:px-10 lg:grid-cols-2 lg:gap-16">
+				<motion.div
+					className="hero-glow-radial pointer-events-none absolute top-[20%] -left-[10%] h-150 w-150 rounded-full"
+					style={{ y: heroGlowYSpring }}
+				/>
+				<div className="relative z-10">
+					<motion.div
+						animate={{ opacity: 1, y: 0, scale: 1 }}
+						className="mb-7 inline-flex items-center gap-2 rounded border border-[#00e5a0]/30 bg-[#00e5a0]/10 px-3 py-1 text-[#00e5a0] text-[10px] uppercase tracking-widest md:text-[11px]"
+						initial={{ opacity: 0, y: 16, scale: 0.95 }}
+						transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+					>
+						<span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-[#00e5a0] shadow-[0_0_6px_#00e5a0]" />
+						Now in public beta
+					</motion.div>
+					<motion.h1
+						animate={{ opacity: 1, y: 0 }}
+						className="mb-2 font-extrabold font-syne text-[clamp(2.4rem,5vw,3.6rem)] text-foreground leading-[1.05] tracking-tighter"
+						initial={{ opacity: 0, y: 24 }}
+						transition={{
+							duration: 0.65,
+							delay: 0.1,
+							ease: [0.22, 1, 0.36, 1],
+						}}
+					>
+						Code review,
+						<br />
+						reinvented.
+					</motion.h1>
+					<motion.div
+						animate={{ opacity: 1 }}
+						className="mb-7 min-h-8 font-normal text-[#00e5a0] text-[clamp(1rem,2.5vw,1.4rem)]"
+						initial={{ opacity: 0 }}
+						transition={{ duration: 0.4, delay: 0.5 }}
+					>
+						$ {typed}
+						<span
+							className="ml-0.5 inline-block h-[1.1em] w-0.75 bg-[#00e5a0] align-text-bottom"
+							style={{
+								opacity: cursorVisible ? 1 : 0,
+								transition: "opacity 0.1s",
+							}}
+						/>
+					</motion.div>
+					<motion.p
+						animate={{ opacity: 1, y: 0 }}
+						className="mb-10 max-w-115 text-[13px] text-muted-foreground leading-relaxed md:text-[15px]"
+						initial={{ opacity: 0, y: 16 }}
+						transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+					>
+						CodePulse connects to your GitHub repositories and delivers instant,
+						actionable AI feedback on every pull request — so your team ships
+						faster with fewer bugs.
+					</motion.p>
+					<motion.div
+						animate="visible"
+						className="flex flex-wrap gap-4"
+						initial="hidden"
+						variants={staggerContainer}
+					>
+						<motion.div custom={0.4} variants={fadeUp as unknown as Variants}>
+							<SignInWithGitHubButton className="inline-flex items-center gap-2.5 rounded-md bg-white px-6 py-3 font-bold text-[#0a0c0f] text-[13px] shadow-none transition-all duration-150 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_6px_24px_rgba(255,255,255,0.15)] active:scale-[0.97] md:text-[14px]">
+								<Github className="h-5 w-5" />
+								Continue with GitHub
+							</SignInWithGitHubButton>
+						</motion.div>
+						<motion.a
+							className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-6 py-3 text-[13px] text-muted-foreground transition-all hover:border-[#00e5a0] hover:text-[#00e5a0] md:text-[14px]"
+							custom={0.5}
+							href="#features"
+							variants={fadeUp as unknown as Variants}
+							whileHover={{ scale: 1.03 }}
+							whileTap={{ scale: 0.97 }}
 						>
-							Pricing
-						</a>
-						<Link
-							className="transition-colors hover:text-[#00e5a0]"
-							href="/signup"
-						>
-							Sign up
-						</Link>
-					</nav>
-					<span>Built with ♥ for developers</span>
-				</motion.footer>
-				<ScrollToTop />
+							See how it works →
+						</motion.a>
+					</motion.div>
+				</div>
+
+				<motion.div
+					animate={{ opacity: 1, x: 0, rotateY: 0 }}
+					className="relative hidden lg:block"
+					initial={{ opacity: 0, x: 40, rotateY: 4 }}
+					transition={{
+						duration: 0.8,
+						delay: 0.35,
+						ease: [0.22, 1, 0.36, 1],
+					}}
+					whileHover={{ scale: 1.015, transition: { duration: 0.3 } }}
+				>
+					<div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_32px_64px_rgba(0,0,0,0.12)] dark:shadow-[0_0_0_1px_oklch(0.28_0.025_250),0_32px_64px_rgba(0,0,0,0.5),0_0_80px_rgba(0,229,160,0.04)]">
+						<div className="flex items-center gap-2 border-border border-b bg-muted px-4 py-3">
+							<div className="flex gap-1.5">
+								<div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+								<div className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
+								<div className="h-3 w-3 rounded-full bg-[#27c93f]" />
+							</div>
+							<div className="mx-auto text-[11px] text-muted-foreground tracking-wide">
+								codepulse — review #142
+							</div>
+						</div>
+						<div className="p-6 text-[12px] leading-[1.8] md:text-[13px]">
+							<AnimatePresence>
+								{terminalReady &&
+									diffLines.map((line, i) => (
+										<motion.div
+											animate={{ opacity: 1, x: 0 }}
+											className="flex gap-4"
+											initial={{ opacity: 0, x: -10 }}
+											key={i}
+											transition={{
+												duration: 0.28,
+												delay: 0.7 + i * 0.07,
+												ease: "easeOut",
+											}}
+										>
+											<span className="min-w-6 select-none text-right text-muted-foreground/60">
+												{line.n}
+											</span>
+											<span
+												className={
+													line.type === "add"
+														? "text-[#00e5a0]"
+														: line.type === "del"
+															? "text-[#ff7b7b] line-through opacity-60"
+															: "text-muted-foreground"
+												}
+											>
+												{line.type === "add"
+													? "+ "
+													: line.type === "del"
+														? "- "
+														: "  "}
+												{line.code}
+											</span>
+										</motion.div>
+									))}
+							</AnimatePresence>
+							<motion.div
+								animate={{ opacity: 1, y: 0 }}
+								className="mt-4 rounded-r-lg border-[#00e5a0] border-l-2 bg-[#00e5a0]/10 p-4 text-[12px] leading-relaxed"
+								initial={{ opacity: 0, y: 10 }}
+								transition={{ duration: 0.5, delay: 1.65, ease: "easeOut" }}
+							>
+								<div className="mb-1.5 font-bold text-[#00e5a0] text-[11px] uppercase tracking-widest">
+									▸ CodePulse AI
+								</div>
+								<p className="text-foreground/90">
+									Security: the raw{" "}
+									<code className="px-1 text-[#f5a623]">id</code> parameter was
+									interpolated directly into the URL, enabling path traversal.
+									Wrapping it with{" "}
+									<code className="px-1 text-[#00e5a0]">
+										encodeURIComponent()
+									</code>{" "}
+									sanitises the input.
+								</p>
+							</motion.div>
+						</div>
+					</div>
+				</motion.div>
+			</section>
+
+			<div className="flex flex-wrap justify-center gap-10 border-border border-y bg-muted/40 px-5 py-8 lg:gap-24">
+				<StatItem label="Pull Requests Reviewed" num="12k+" />
+				<StatItem label="Teams Using CodePulse" num="340+" />
+				<StatItem label="Bug Detection Rate" num="94%" />
 			</div>
-		</>
+
+			<section className="mx-auto max-w-275 px-5 py-24 md:px-10" id="features">
+				<motion.p
+					className="mb-3 text-[#00e5a0] text-[11px] uppercase tracking-[0.2em]"
+					initial={{ opacity: 0, x: -12 }}
+					transition={{ duration: 0.4, ease: "easeOut" }}
+					viewport={{ once: true, margin: "-80px" }}
+					whileInView={{ opacity: 1, x: 0 }}
+				>
+					{"// why codepulse"}
+				</motion.p>
+				<motion.h2
+					className="mb-12 font-extrabold font-syne text-[clamp(1.8rem,4vw,2.5rem)] text-foreground tracking-tight"
+					initial={{ opacity: 0, y: 20 }}
+					transition={{
+						duration: 0.55,
+						delay: 0.08,
+						ease: [0.22, 1, 0.36, 1],
+					}}
+					viewport={{ once: true, margin: "-80px" }}
+					whileInView={{ opacity: 1, y: 0 }}
+				>
+					Everything your team needs.
+				</motion.h2>
+				<motion.div
+					className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
+					initial="hidden"
+					variants={staggerContainer}
+					viewport={{ once: true, margin: "-60px" }}
+					whileInView="visible"
+				>
+					{features.map((f) => (
+						<FeatureCard key={f.title} {...f} />
+					))}
+				</motion.div>
+			</section>
+
+			<motion.footer
+				className="flex flex-col items-center justify-between gap-4 border-border border-t px-5 py-8 text-[12px] text-muted-foreground md:flex-row md:px-10"
+				initial={{ opacity: 0 }}
+				transition={{ duration: 0.5 }}
+				viewport={{ once: true }}
+				whileInView={{ opacity: 1 }}
+			>
+				<span>© {new Date().getFullYear()} CodePulse</span>
+				<nav className="flex flex-wrap items-center justify-center gap-4">
+					<Link className="transition-colors hover:text-[#00e5a0]" href="/docs">
+						Docs
+					</Link>
+					<Link
+						className="transition-colors hover:text-[#00e5a0]"
+						href="/signup"
+					>
+						Sign up
+					</Link>
+				</nav>
+				<span>Built with ♥ for developers</span>
+			</motion.footer>
+			<ScrollToTop />
+		</div>
 	);
 }
 
@@ -634,7 +517,7 @@ function NavAuthActions() {
 	const { data: session, isPending } = useSession();
 	if (isPending) {
 		return (
-			<div className="inline-flex animate-pulse items-center gap-2.5 rounded-md px-4 py-2 text-[#6e7681] text-[13px]">
+			<div className="inline-flex animate-pulse items-center gap-2.5 rounded-md px-4 py-2 text-[13px] text-muted-foreground">
 				…
 			</div>
 		);
@@ -663,26 +546,28 @@ function SignInDropdown() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="end"
-				className="w-60 rounded-xl border-[#1e2733] bg-[#0f1218] p-1.5 text-[#c9d1d9] shadow-2xl focus:outline-none"
+				className="w-60 rounded-xl border-border bg-popover p-1.5 text-popover-foreground shadow-2xl focus:outline-none"
 			>
 				<DropdownMenuGroup>
-					<DropdownMenuLabel className="px-3 py-2 font-mono text-[#6e7681] text-[10px] uppercase tracking-widest">
+					<DropdownMenuLabel className="px-3 py-2 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 						Sign in with
 					</DropdownMenuLabel>
-					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-[#151b24] focus:text-white">
+					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-accent focus:text-accent-foreground">
 						<SignInWithGitHubButton className="group flex w-full cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2.5 text-left">
 							<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#24292e]">
 								<GithubIcon />
 							</div>
 							<div className="flex flex-col">
-								<span className="font-semibold text-[13px] text-white">
+								<span className="font-semibold text-[13px] text-foreground">
 									GitHub
 								</span>
-								<span className="text-[#6e7681] text-[10px]">github.com</span>
+								<span className="text-[10px] text-muted-foreground">
+									github.com
+								</span>
 							</div>
 						</SignInWithGitHubButton>
 					</DropdownMenuItem>
-					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-[#151b24] focus:text-white">
+					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-accent focus:text-accent-foreground">
 						<Link
 							className="group flex w-full items-center gap-3 px-3 py-2.5"
 							href="/signup"
@@ -691,14 +576,16 @@ function SignInDropdown() {
 								<Box className="h-4 w-4 text-white" />
 							</div>
 							<div className="flex flex-col">
-								<span className="font-semibold text-[13px] text-white">
+								<span className="font-semibold text-[13px] text-foreground">
 									GitLab
 								</span>
-								<span className="text-[#6e7681] text-[10px]">Coming soon</span>
+								<span className="text-[10px] text-muted-foreground">
+									Coming soon
+								</span>
 							</div>
 						</Link>
 					</DropdownMenuItem>
-					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-[#151b24] focus:text-white">
+					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-accent focus:text-accent-foreground">
 						<Link
 							className="group flex w-full items-center gap-3 px-3 py-2.5"
 							href="/signup"
@@ -707,16 +594,18 @@ function SignInDropdown() {
 								<Globe className="h-4 w-4 text-white" />
 							</div>
 							<div className="flex flex-col">
-								<span className="font-semibold text-[13px] text-white">
+								<span className="font-semibold text-[13px] text-foreground">
 									Bitbucket
 								</span>
-								<span className="text-[#6e7681] text-[10px]">Coming soon</span>
+								<span className="text-[10px] text-muted-foreground">
+									Coming soon
+								</span>
 							</div>
 						</Link>
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
-				<DropdownMenuSeparator className="my-1 h-px bg-[#1e2733]" />
-				<div className="px-3 py-2 text-center text-[#6e7681] text-[10px]">
+				<DropdownMenuSeparator className="my-1 h-px bg-border" />
+				<div className="px-3 py-2 text-center text-[10px] text-muted-foreground">
 					No account?{" "}
 					<Link className="text-[#00e5a0] hover:underline" href="/signup">
 						Sign up free

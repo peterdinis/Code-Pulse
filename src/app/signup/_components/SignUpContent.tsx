@@ -21,16 +21,16 @@ export function SignUpContent() {
 	const { data: session, isPending } = useSession();
 
 	if (isPending) {
-		return <div className="text-center text-[#6e7681] text-sm">Loading…</div>;
+		return <div className="text-center text-muted-foreground text-sm">Loading…</div>;
 	}
 
 	if (session?.user) {
 		return (
 			<div className="max-w-md text-center">
-				<h1 className="mb-2 font-bold font-sans text-2xl text-white">
+				<h1 className="mb-2 font-bold font-sans text-2xl text-foreground">
 					You’re signed in
 				</h1>
-				<p className="mb-6 text-[#6e7681] text-sm">
+				<p className="mb-6 text-muted-foreground text-sm">
 					Head to the dashboard to connect repositories and run AI reviews.
 				</p>
 				<Link
@@ -45,10 +45,10 @@ export function SignUpContent() {
 
 	return (
 		<div className="w-full max-w-95 text-center">
-			<h1 className="mb-2 font-extrabold font-sans text-2xl text-white tracking-tight md:text-3xl">
+			<h1 className="mb-2 font-extrabold font-sans text-2xl text-foreground tracking-tight md:text-3xl">
 				Create your account
 			</h1>
-			<p className="mb-8 text-[#6e7681] text-sm">
+			<p className="mb-8 text-muted-foreground text-sm">
 				Sign up with GitHub to start using CodePulse. Free for open-source; no
 				credit card required.
 			</p>
@@ -56,7 +56,7 @@ export function SignUpContent() {
 				<GithubIcon />
 				Sign up with GitHub
 			</SignInWithGitHubButton>
-			<p className="mt-6 text-[#6e7681] text-[12px]">
+			<p className="mt-6 text-muted-foreground text-[12px]">
 				Already have an account?{" "}
 				<Link className="text-[#00e5a0] hover:underline" href="/">
 					Sign in on the home page
