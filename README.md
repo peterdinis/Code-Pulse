@@ -1,4 +1,4 @@
-# Code-Pulse
+# Code-Pulse STILL UNDER DEVELOPMENT
 
 **Code-Pulse** connects to your GitHub repositories and delivers AI-assisted feedback on pull requests. It includes a marketing site, authenticated dashboard, docs, and a type-safe API built with the [T3 Stack](https://create.t3.gg/) patterns.
 

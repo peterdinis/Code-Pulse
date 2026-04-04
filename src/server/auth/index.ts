@@ -1,8 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 import { env } from "~/env";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { buildTrustedOrigins } from "./trusted-origins";
 
 const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
 const githubCallbackURL =
@@ -32,11 +34,12 @@ export const auth = betterAuth({
 			redirectURI: githubCallbackURL,
 			scope: ["user:email"],
 			overrideUserInfoOnSignIn: true,
-			mapProfileToUser: (profile) => ({
+			mapProfileToUser: (_profile) => ({
 				emailVerified: true,
 			}),
 		},
 	},
+	plugins: [nextCookies()],
 	session: {
 		expiresIn: 60 * 60 * 24 * 7,
 		updateAge: 60 * 60 * 24,
@@ -45,7 +48,7 @@ export const auth = betterAuth({
 			maxAge: 60 * 5,
 		},
 	},
-	trustedOrigins: ["http://localhost:3000"],
+	trustedOrigins: buildTrustedOrigins(),
 });
 
 export type Session = typeof auth.$Infer.Session;
