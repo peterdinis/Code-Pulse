@@ -21,7 +21,9 @@ export function SignUpContent() {
 	const { data: session, isPending } = useSession();
 
 	if (isPending) {
-		return <div className="text-center text-muted-foreground text-sm">Loading…</div>;
+		return (
+			<div className="text-center text-muted-foreground text-sm">Loading…</div>
+		);
 	}
 
 	if (session?.user) {
@@ -56,7 +58,7 @@ export function SignUpContent() {
 				<GithubIcon />
 				Sign up with GitHub
 			</SignInWithGitHubButton>
-			<p className="mt-6 text-muted-foreground text-[12px]">
+			<p className="mt-6 text-[12px] text-muted-foreground">
 				Already have an account?{" "}
 				<Link className="text-[#00e5a0] hover:underline" href="/">
 					Sign in on the home page

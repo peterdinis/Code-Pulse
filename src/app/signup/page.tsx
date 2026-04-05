@@ -14,7 +14,7 @@ export default function SignUpPage() {
 		<div className="flex min-h-screen flex-col bg-background font-mono text-foreground antialiased">
 			<header className="sticky top-0 z-50 flex h-14 items-center justify-between border-border border-b bg-background/95 px-5 backdrop-blur-xl md:px-10">
 				<Link
-					className="inline-flex items-center gap-2 text-muted-foreground text-[13px] transition-colors hover:text-[#00e5a0]"
+					className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition-colors hover:text-[#00e5a0]"
 					href="/"
 				>
 					<ArrowLeft className="h-4 w-4" />

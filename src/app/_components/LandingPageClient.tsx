@@ -9,7 +9,7 @@ import {
 	useTransform,
 	type Variants,
 } from "framer-motion";
-import {ChevronDown, Github, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Github, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ScrollToTop } from "~/components/ScrollToTop";
