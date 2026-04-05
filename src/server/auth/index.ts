@@ -4,12 +4,16 @@ import { nextCookies } from "better-auth/next-js";
 import { env } from "~/env";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { getAuthBaseURLConfig } from "./base-url";
 import { buildTrustedOrigins } from "./trusted-origins";
 
-const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
-const githubCallbackURL =
-	env.GITHUB_CALLBACK_URL?.replace(/\/$/, "") ??
-	`${baseURL}/api/auth/callback/github`;
+const baseURLConfig = getAuthBaseURLConfig();
+
+/** Only when env is set — otherwise redirect_uri follows the incoming request (fixes localhost vs 127.0.0.1). */
+const ghCallback = env.GITHUB_CALLBACK_URL?.trim();
+const githubRedirectOverride = ghCallback
+	? { redirectURI: ghCallback.replace(/\/$/, "") }
+	: {};
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -22,7 +26,7 @@ export const auth = betterAuth({
 		},
 	}),
 	secret: env.BETTER_AUTH_SECRET,
-	baseURL,
+	baseURL: baseURLConfig,
 	basePath: "/api/auth",
 	emailAndPassword: {
 		enabled: true,
@@ -31,7 +35,7 @@ export const auth = betterAuth({
 		github: {
 			clientId: env.GITHUB_CLIENT_ID,
 			clientSecret: env.GITHUB_CLIENT_SECRET,
-			redirectURI: githubCallbackURL,
+			...githubRedirectOverride,
 			scope: ["user:email"],
 			overrideUserInfoOnSignIn: true,
 			mapProfileToUser: (_profile) => ({
