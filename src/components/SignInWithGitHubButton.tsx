@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { signIn } from "~/lib/client";
 
 /** Default redirect path after GitHub sign-in. Override with NEXT_PUBLIC_AUTH_CALLBACK_URL. */
@@ -53,10 +54,21 @@ export function SignInWithGitHubButton({
 			});
 			if (result && "url" in result && typeof result.url === "string") {
 				window.location.href = result.url;
-			} else {
-				setIsLoading(false);
+				return;
 			}
-		} catch {
+			toast.error("Could not start sign-in", {
+				description:
+					"The server did not return a GitHub redirect. Check BETTER_AUTH_URL and the network tab.",
+			});
+			setIsLoading(false);
+		} catch (e) {
+			console.error("[SignInWithGitHubButton]", e);
+			toast.error("GitHub sign-in failed", {
+				description:
+					e instanceof Error
+						? e.message
+						: "Verify GitHub OAuth app settings and env vars. Open GET /api/auth/callback-url for the exact callback URL.",
+			});
 			setIsLoading(false);
 		}
 	};

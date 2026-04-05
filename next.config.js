@@ -8,10 +8,7 @@ import "./src/env.js";
 const config = {
 	reactStrictMode: true,
 	typedRoutes: true,
-	experimental: {
-		optimizeCss: true
-	},
-	transpilePackages: ["lucide-react", "framer-motion", "next-themes"]
+	transpilePackages: ["lucide-react", "framer-motion", "next-themes"],
 };
 
 export default config;
