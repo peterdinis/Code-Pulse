@@ -9,7 +9,7 @@ import {
 	useTransform,
 	type Variants,
 } from "framer-motion";
-import { Box, ChevronDown, Github, Globe, LayoutDashboard } from "lucide-react";
+import {ChevronDown, Github, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ScrollToTop } from "~/components/ScrollToTop";
@@ -566,42 +566,6 @@ function SignInDropdown() {
 								</span>
 							</div>
 						</SignInWithGitHubButton>
-					</DropdownMenuItem>
-					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-accent focus:text-accent-foreground">
-						<Link
-							className="group flex w-full items-center gap-3 px-3 py-2.5"
-							href="/signup"
-						>
-							<div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#fc6d26]">
-								<Box className="h-4 w-4 text-white" />
-							</div>
-							<div className="flex flex-col">
-								<span className="font-semibold text-[13px] text-foreground">
-									GitLab
-								</span>
-								<span className="text-[10px] text-muted-foreground">
-									Coming soon
-								</span>
-							</div>
-						</Link>
-					</DropdownMenuItem>
-					<DropdownMenuItem className="cursor-pointer rounded-lg p-0 outline-none transition-colors focus:bg-accent focus:text-accent-foreground">
-						<Link
-							className="group flex w-full items-center gap-3 px-3 py-2.5"
-							href="/signup"
-						>
-							<div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#0052cc]">
-								<Globe className="h-4 w-4 text-white" />
-							</div>
-							<div className="flex flex-col">
-								<span className="font-semibold text-[13px] text-foreground">
-									Bitbucket
-								</span>
-								<span className="text-[10px] text-muted-foreground">
-									Coming soon
-								</span>
-							</div>
-						</Link>
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator className="my-1 h-px bg-border" />
