@@ -28,6 +28,8 @@ export const env = createEnv({
 	 */
 	client: {
 		NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+		/** Same origin as BETTER_AUTH_URL if the client runs SSR without window (optional). */
+		NEXT_PUBLIC_BETTER_AUTH_URL: z.string().url().optional(),
 		NEXT_PUBLIC_AUTH_CALLBACK_URL: z.string().optional(),
 	},
 
@@ -46,6 +48,7 @@ export const env = createEnv({
 		OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 		NODE_ENV: process.env.NODE_ENV,
 		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+		NEXT_PUBLIC_BETTER_AUTH_URL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
 		NEXT_PUBLIC_AUTH_CALLBACK_URL: process.env.NEXT_PUBLIC_AUTH_CALLBACK_URL,
 	},
 	/**

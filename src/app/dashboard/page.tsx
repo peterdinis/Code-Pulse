@@ -45,7 +45,7 @@ function RedirectToHome() {
 }
 
 export default function DashboardPage() {
-	const router = useRouter();
+	const _router = useRouter();
 	const { data: session, isPending } = useSession();
 	const [section, setSection] = useState<DashboardSection>("repositories");
 	const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
@@ -276,7 +276,7 @@ function RepositoriesSection({
 
 	useEffect(() => {
 		setPage(1);
-	}, [search]);
+	}, []);
 
 	if (isLoading && !data) {
 		return (
@@ -611,7 +611,7 @@ function ReviewsSection({
 
 	useEffect(() => {
 		setPage(1);
-	}, [status, search]);
+	}, []);
 
 	if (isLoading && !data) {
 		return <p className="text-muted-foreground text-sm">Loading PR reviews…</p>;
@@ -1228,11 +1228,15 @@ function ReviewDetailPanel({
 							Provider & API keys
 						</p>
 						<div className="flex flex-col gap-2">
-							<label className="text-[12px] text-muted-foreground">
+							<label
+								className="text-[12px] text-muted-foreground"
+								htmlFor="ai-provider-select"
+							>
 								AI provider
 							</label>
 							<select
 								className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+								id="ai-provider-select"
 								onChange={(e) =>
 									setProviderSelect(e.target.value as "openai" | "gemini")
 								}
@@ -1243,7 +1247,10 @@ function ReviewDetailPanel({
 							</select>
 						</div>
 						<div className="flex flex-col gap-1">
-							<label className="text-[12px] text-muted-foreground">
+							<label
+								className="text-[12px] text-muted-foreground"
+								htmlFor="openai-api-key"
+							>
 								OpenAI API key{" "}
 								{aiUsage?.openaiConfigured && (
 									<span className="text-emerald-600 dark:text-emerald-400">
@@ -1254,6 +1261,7 @@ function ReviewDetailPanel({
 							<input
 								autoComplete="off"
 								className="w-full rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+								id="openai-api-key"
 								onChange={(e) => setOpenaiKeyInput(e.target.value)}
 								placeholder="sk-… (leave empty to keep current)"
 								type="password"
@@ -1261,7 +1269,10 @@ function ReviewDetailPanel({
 							/>
 						</div>
 						<div className="flex flex-col gap-1">
-							<label className="text-[12px] text-muted-foreground">
+							<label
+								className="text-[12px] text-muted-foreground"
+								htmlFor="gemini-api-key"
+							>
 								Gemini API key{" "}
 								{aiUsage?.geminiConfigured && (
 									<span className="text-emerald-600 dark:text-emerald-400">
@@ -1272,6 +1283,7 @@ function ReviewDetailPanel({
 							<input
 								autoComplete="off"
 								className="w-full rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+								id="gemini-api-key"
 								onChange={(e) => setGeminiKeyInput(e.target.value)}
 								placeholder="Leave empty to keep current · Get key: aistudio.google.com"
 								type="password"

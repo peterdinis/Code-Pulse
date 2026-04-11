@@ -75,7 +75,7 @@ export function MarkdownReview({
 	const blocks: ReactNode[] = [];
 	const lines = content.split("\n");
 	let i = 0;
-	let listKey = 0;
+	let _listKey = 0;
 
 	while (i < lines.length) {
 		const line = lines[i];
@@ -86,11 +86,13 @@ export function MarkdownReview({
 		const trimmed = line.trimEnd();
 
 		if (trimmed.startsWith("```")) {
-			const lang = trimmed.slice(3).trim();
+			const _lang = trimmed.slice(3).trim();
 			const codeLines: string[] = [];
 			i++;
-			while (i < lines.length && !lines[i]!.startsWith("```")) {
-				codeLines.push(lines[i]!);
+			while (i < lines.length && !lines[i]?.startsWith("```")) {
+				const cur = lines[i];
+				if (cur == null) break;
+				codeLines.push(cur);
 				i++;
 			}
 			i++;
@@ -160,11 +162,12 @@ export function MarkdownReview({
 			const items: string[] = [];
 			while (
 				i < lines.length &&
-				(lines[i]!.startsWith("- ") ||
-					lines[i]!.startsWith("* ") ||
-					/^\d+\. /.test(lines[i]!.trimStart()))
+				(lines[i]?.startsWith("- ") ||
+					lines[i]?.startsWith("* ") ||
+					/^\d+\. /.test(lines[i]?.trimStart() ?? ""))
 			) {
-				const raw = lines[i]!;
+				const raw = lines[i];
+				if (raw == null) break;
 				const bullet = raw.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
 				items.push(bullet);
 				i++;
@@ -186,7 +189,7 @@ export function MarkdownReview({
 					),
 				),
 			);
-			listKey++;
+			_listKey++;
 			continue;
 		}
 

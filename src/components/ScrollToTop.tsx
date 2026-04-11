@@ -2,19 +2,19 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function ScrollToTop() {
 	const [isVisible, setIsVisible] = useState(false);
 
 	// Show button when page is scrolled down
-	const toggleVisibility = () => {
+	const toggleVisibility = useCallback(() => {
 		if (window.pageYOffset > 300) {
 			setIsVisible(true);
 		} else {
 			setIsVisible(false);
 		}
-	};
+	}, []);
 
 	// Set the top scroll position
 	const scrollToTop = () => {
@@ -27,7 +27,7 @@ export function ScrollToTop() {
 	useEffect(() => {
 		window.addEventListener("scroll", toggleVisibility);
 		return () => window.removeEventListener("scroll", toggleVisibility);
-	}, []);
+	}, [toggleVisibility]);
 
 	return (
 		<AnimatePresence>
