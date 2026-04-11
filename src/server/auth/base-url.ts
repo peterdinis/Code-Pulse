@@ -25,9 +25,7 @@ export function getAuthBaseURLConfig():
 			return fallback;
 		}
 
-		const port =
-			u.port ||
-			(u.protocol === "https:" ? "443" : "3000");
+		const port = u.port || (u.protocol === "https:" ? "443" : "3000");
 		const primary = u.port ? u.host : `${hostname}:${port}`;
 		const hosts = new Set<string>([primary]);
 

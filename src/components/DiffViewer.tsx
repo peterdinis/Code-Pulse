@@ -1,17 +1,21 @@
 "use client";
 
-type DiffLine = { type: "add" | "remove" | "context"; text: string };
+type DiffLine = {
+	type: "add" | "remove" | "context";
+	text: string;
+	rowId: number;
+};
 
 function parseDiff(raw: string): DiffLine[] {
 	if (!raw.trim()) return [];
-	return raw.split("\n").map((line) => {
+	return raw.split("\n").map((line, rowId) => {
 		if (line.startsWith("+") && !line.startsWith("+++")) {
-			return { type: "add", text: line.slice(1) || " " };
+			return { type: "add", text: line.slice(1) || " ", rowId };
 		}
 		if (line.startsWith("-") && !line.startsWith("---")) {
-			return { type: "remove", text: line.slice(1) || " " };
+			return { type: "remove", text: line.slice(1) || " ", rowId };
 		}
-		return { type: "context", text: line };
+		return { type: "context", text: line, rowId };
 	});
 }
 
@@ -39,7 +43,7 @@ export function DiffViewer({
 			className={`diff-theme overflow-x-auto rounded-lg font-mono text-[13px] leading-relaxed ${className ?? ""}`}
 		>
 			<div className="min-w-max">
-				{lines.map((line, i) => (
+				{lines.map((line) => (
 					<div
 						className={`flex border-(--code-border)/50 border-b last:border-b-0 ${
 							line.type === "add"
@@ -48,7 +52,7 @@ export function DiffViewer({
 									? "diff-remove"
 									: "diff-context bg-transparent"
 						}`}
-						key={i}
+						key={line.rowId}
 					>
 						<span className="w-8 shrink-0 select-none border-(--code-border)/50 border-r py-0.5 pr-2 text-right opacity-60">
 							{line.type === "add" ? "+" : line.type === "remove" ? "-" : " "}

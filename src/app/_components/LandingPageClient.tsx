@@ -79,9 +79,9 @@ function StatItem({ num, label }: { num: string; label: string }) {
 	const ref = useRef(null);
 	const inView = useInView(ref, { once: true, margin: "-60px" });
 	const match = num.match(/^([\d.]+)(.*)$/);
-	const numericPart = match ? parseFloat(match[1]!) : 0;
-	const suffix = match ? match[2] : num;
-	const isFloat = match ? match[1]!.includes(".") : false;
+	const numericPart = match?.[1] != null ? parseFloat(match[1]) : 0;
+	const suffix = match?.[2] ?? num;
+	const isFloat = Boolean(match?.[1]?.includes("."));
 	const counted = useCountUp(
 		isFloat ? numericPart * 10 : numericPart,
 		1.6,
@@ -89,7 +89,7 @@ function StatItem({ num, label }: { num: string; label: string }) {
 	);
 	const display = isFloat
 		? (counted / 10).toFixed(1) + suffix
-		: counted + suffix!;
+		: String(counted) + suffix;
 
 	return (
 		<motion.div
@@ -150,12 +150,12 @@ const diffLines = [
 	{
 		n: "13",
 		type: "del",
-		code: "  const res = await fetch(`/api/users/${id}`);",
+		code: `  const res = await fetch(\`/api/users/\${id}\`);`,
 	},
 	{
 		n: "13",
 		type: "add",
-		code: "  const res = await fetch(`/api/users/${encodeURIComponent(id)}`);",
+		code: `  const res = await fetch(\`/api/users/\${encodeURIComponent(id)}\`);`,
 	},
 	{
 		n: "14",
@@ -169,8 +169,10 @@ const diffLines = [
 function GithubIcon() {
 	return (
 		<svg
+			aria-label="GitHub"
 			className="gh-icon h-5 w-5"
 			fill="currentColor"
+			role="img"
 			viewBox="0 0 24 24"
 			xmlns="http://www.w3.org/2000/svg"
 		>
@@ -391,7 +393,7 @@ export function LandingPageClient() {
 											animate={{ opacity: 1, x: 0 }}
 											className="flex gap-4"
 											initial={{ opacity: 0, x: -10 }}
-											key={i}
+											key={`${line.n}-${line.type}-${line.code}`}
 											transition={{
 												duration: 0.28,
 												delay: 0.7 + i * 0.07,

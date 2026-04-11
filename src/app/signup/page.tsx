@@ -4,9 +4,14 @@ import Link from "next/link";
 import { SignUpContent } from "./_components/SignUpContent";
 
 export const metadata: Metadata = {
-	title: "Sign up — CodePulse",
+	title: "Sign up",
 	description:
-		"Create your CodePulse account with GitHub. Free for open-source.",
+		"Create your CodePulse account with GitHub. Connect repositories and run AI-powered pull request reviews.",
+	openGraph: {
+		title: "Sign up — CodePulse",
+		description:
+			"Create your CodePulse account with GitHub and start AI code reviews.",
+	},
 };
 
 export default function SignUpPage() {

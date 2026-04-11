@@ -65,12 +65,11 @@ export const prReviewRouter = createTRPCRouter({
 						if (Number.isNaN(num)) {
 							conditions.push(like(prReview.prTitle, termLike));
 						} else {
-							conditions.push(
-								or(
-									eq(prReview.prNumber, num),
-									like(prReview.prTitle, termLike),
-								)!,
+							const searchOr = or(
+								eq(prReview.prNumber, num),
+								like(prReview.prTitle, termLike),
 							);
+							if (searchOr) conditions.push(searchOr);
 						}
 					}
 					const whereClause =

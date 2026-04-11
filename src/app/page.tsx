@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
+import { HomeJsonLd } from "~/components/seo/JsonLd";
+import { defaultDescription, siteName } from "~/lib/site";
 import { LandingPageClient } from "./_components/LandingPageClient";
 
 export const metadata: Metadata = {
-	title: "CodePulse — AI Code Review",
-	description:
-		"CodePulse connects to your GitHub repositories and delivers instant, actionable AI feedback on every pull request. Ship faster with fewer bugs.",
+	title: `${siteName} — AI code review for GitHub`,
+	description: defaultDescription,
+	openGraph: {
+		title: `${siteName} — AI code review for GitHub`,
+		description: defaultDescription,
+	},
 };
 
 export default function HomePage() {
-	return <LandingPageClient />;
+	return (
+		<>
+			<HomeJsonLd />
+			<LandingPageClient />
+		</>
+	);
 }
