@@ -224,27 +224,27 @@ export function LandingPageClient() {
 		title: string;
 		desc: string;
 	}[] = [
-			{
-				icon: Zap,
-				title: "Instant analysis",
-				desc: "AI reviews your PR in seconds. No waiting, no context-switching.",
-			},
-			{
-				icon: Search,
-				title: "Deep insights",
-				desc: "Catches bugs, anti-patterns, and security issues humans miss.",
-			},
-			{
-				icon: GitBranch,
-				title: "GitHub native",
-				desc: "Works in your existing workflow. No new tools to learn.",
-			},
-			{
-				icon: BarChart3,
-				title: "Team analytics",
-				desc: "Track code quality trends across your organisation.",
-			},
-		];
+		{
+			icon: Zap,
+			title: "Instant analysis",
+			desc: "AI reviews your PR in seconds. No waiting, no context-switching.",
+		},
+		{
+			icon: Search,
+			title: "Deep insights",
+			desc: "Catches bugs, anti-patterns, and security issues humans miss.",
+		},
+		{
+			icon: GitBranch,
+			title: "GitHub native",
+			desc: "Works in your existing workflow. No new tools to learn.",
+		},
+		{
+			icon: BarChart3,
+			title: "Team analytics",
+			desc: "Track code quality trends across your organisation.",
+		},
+	];
 
 	return (
 		<div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-foreground leading-normal antialiased selection:bg-brand/25 dark:selection:text-white">
