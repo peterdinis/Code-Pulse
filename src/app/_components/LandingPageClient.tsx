@@ -224,27 +224,27 @@ export function LandingPageClient() {
 		title: string;
 		desc: string;
 	}[] = [
-		{
-			icon: Zap,
-			title: "Instant analysis",
-			desc: "AI reviews your PR in seconds. No waiting, no context-switching.",
-		},
-		{
-			icon: Search,
-			title: "Deep insights",
-			desc: "Catches bugs, anti-patterns, and security issues humans miss.",
-		},
-		{
-			icon: GitBranch,
-			title: "GitHub native",
-			desc: "Works in your existing workflow. No new tools to learn.",
-		},
-		{
-			icon: BarChart3,
-			title: "Team analytics",
-			desc: "Track code quality trends across your organisation.",
-		},
-	];
+			{
+				icon: Zap,
+				title: "Instant analysis",
+				desc: "AI reviews your PR in seconds. No waiting, no context-switching.",
+			},
+			{
+				icon: Search,
+				title: "Deep insights",
+				desc: "Catches bugs, anti-patterns, and security issues humans miss.",
+			},
+			{
+				icon: GitBranch,
+				title: "GitHub native",
+				desc: "Works in your existing workflow. No new tools to learn.",
+			},
+			{
+				icon: BarChart3,
+				title: "Team analytics",
+				desc: "Track code quality trends across your organisation.",
+			},
+		];
 
 	return (
 		<div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-foreground leading-normal antialiased selection:bg-brand/25 dark:selection:text-white">
@@ -300,15 +300,6 @@ export function LandingPageClient() {
 					style={{ y: heroGlowYSpring }}
 				/>
 				<div className="relative z-10">
-					<motion.div
-						animate={{ opacity: 1, y: 0, scale: 1 }}
-						className="mb-7 inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3 py-1.5 text-[10px] text-brand uppercase tracking-widest md:text-[11px]"
-						initial={{ opacity: 0, y: 16, scale: 0.95 }}
-						transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-					>
-						<span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-brand shadow-brand/40 shadow-md" />
-						Now in public beta
-					</motion.div>
 					<motion.h1
 						animate={{ opacity: 1, y: 0 }}
 						className="mb-2 font-display font-extrabold text-[clamp(2.4rem,5vw,3.6rem)] text-foreground leading-[1.05] tracking-tighter"
