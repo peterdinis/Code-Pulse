@@ -1081,10 +1081,11 @@ function ReviewDetailPanel({
 			utils.prReview.getAiReviewUsage.invalidate({ userId });
 			utils.notification.list.invalidate();
 			utils.notification.unreadCount.invalidate();
-			toast.success("AI review completed.");
-			if (data?.githubSummaryPosted) {
-				toast.success("AI summary was posted on the GitHub pull request.");
-			}
+			toast.success(
+				data?.githubSummaryPosted
+					? "AI review completed and posted on the GitHub PR."
+					: "AI review completed.",
+			);
 		},
 		onError: (e) => toast.error(e.message),
 	});
