@@ -1,0 +1,2 @@
+ALTER TABLE "code-pulse_pr_review" ADD COLUMN "github_comment_id" text;--> statement-breakpoint
+ALTER TABLE "code-pulse_user_settings" ADD COLUMN "post_ai_review_to_github" boolean DEFAULT false NOT NULL;

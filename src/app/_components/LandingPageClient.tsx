@@ -9,9 +9,19 @@ import {
 	useTransform,
 	type Variants,
 } from "framer-motion";
-import { ChevronDown, Github, LayoutDashboard } from "lucide-react";
+import {
+	BarChart3,
+	ChevronDown,
+	GitBranch,
+	Github,
+	LayoutDashboard,
+	type LucideIcon,
+	Search,
+	Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AppLogo } from "~/components/brand/AppLogo";
 import { ScrollToTop } from "~/components/ScrollToTop";
 import { SignInWithGitHubButton } from "~/components/SignInWithGitHubButton";
 import { ThemeToggle } from "~/components/ThemeToggle";
@@ -99,7 +109,7 @@ function StatItem({ num, label }: { num: string; label: string }) {
 			ref={ref}
 			variants={fadeUp as unknown as Variants}
 		>
-			<span className="block font-extrabold font-syne text-3xl text-[#00e5a0] leading-tight md:text-4xl">
+			<span className="block font-display font-extrabold text-3xl text-brand leading-tight md:text-4xl">
 				{display}
 			</span>
 			<span className="mt-1 font-mono text-[10px] text-muted-foreground uppercase tracking-widest md:text-xs">
@@ -110,37 +120,31 @@ function StatItem({ num, label }: { num: string; label: string }) {
 }
 
 function FeatureCard({
-	icon,
+	icon: Icon,
 	title,
 	desc,
 }: {
-	icon: string;
+	icon: LucideIcon;
 	title: string;
 	desc: string;
 }) {
 	return (
 		<motion.div
-			className="cursor-default rounded-lg border border-border bg-card p-7 shadow-sm transition-all duration-200 dark:shadow-none"
+			className="group cursor-default rounded-2xl border border-border/80 bg-card/80 p-7 shadow-sm backdrop-blur-sm transition-all duration-200 dark:bg-card/60 dark:shadow-none"
 			variants={cardVariant as unknown as Variants}
 			whileHover={{
-				y: -6,
-				borderColor: "rgba(0,229,160,0.35)",
-				boxShadow: "0 16px 40px rgba(0,229,160,0.08)",
+				y: -4,
+				borderColor: "oklch(0.52 0.14 168 / 0.35)",
+				boxShadow: "0 20px 48px oklch(0.52 0.14 168 / 0.08)",
 			}}
 		>
-			<motion.div
-				className="mb-4 text-2xl"
-				initial={{ scale: 0.5, opacity: 0 }}
-				transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
-				viewport={{ once: true }}
-				whileInView={{ scale: 1, opacity: 1 }}
-			>
-				{icon}
-			</motion.div>
-			<div className="mb-2 font-bold font-syne text-base text-foreground">
+			<div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand ring-1 ring-brand/15 transition-colors group-hover:bg-brand/15">
+				<Icon className="h-5 w-5" strokeWidth={2} />
+			</div>
+			<div className="mb-2 font-bold font-display text-base text-foreground tracking-tight">
 				{title}
 			</div>
-			<p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
+			<p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
 		</motion.div>
 	);
 }
@@ -215,76 +219,82 @@ export function LandingPageClient() {
 		return () => clearTimeout(t);
 	}, []);
 
-	const features = [
+	const features: {
+		icon: LucideIcon;
+		title: string;
+		desc: string;
+	}[] = [
 		{
-			icon: "⚡",
-			title: "Instant Analysis",
+			icon: Zap,
+			title: "Instant analysis",
 			desc: "AI reviews your PR in seconds. No waiting, no context-switching.",
 		},
 		{
-			icon: "🔍",
-			title: "Deep Insights",
+			icon: Search,
+			title: "Deep insights",
 			desc: "Catches bugs, anti-patterns, and security issues humans miss.",
 		},
 		{
-			icon: "🔁",
-			title: "GitHub Native",
-			desc: "Works directly in your existing workflow. No new tools to learn.",
+			icon: GitBranch,
+			title: "GitHub native",
+			desc: "Works in your existing workflow. No new tools to learn.",
 		},
 		{
-			icon: "📈",
-			title: "Team Analytics",
-			desc: "Track code quality trends across your entire organisation.",
+			icon: BarChart3,
+			title: "Team analytics",
+			desc: "Track code quality trends across your organisation.",
 		},
 	];
 
 	return (
-		<div className="scanline overflow-x-hidden bg-background font-mono text-foreground leading-normal antialiased selection:bg-[#00e5a0]/30 dark:selection:text-white">
-			<motion.nav className="fixed top-0 right-0 left-0 z-100 flex h-14 items-center justify-between border-border border-b bg-background/80 px-5 backdrop-blur-xl md:px-10 dark:bg-background/85">
-				<Link
-					className="flex items-center gap-2 font-extrabold font-syne text-[1.1rem] text-foreground tracking-tight"
-					href="/"
+		<div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-foreground leading-normal antialiased selection:bg-brand/25 dark:selection:text-white">
+			<div
+				aria-hidden
+				className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-25%,var(--brand-muted),transparent_58%)] dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-25%,oklch(0.76_0.1_168_/_0.12),transparent_58%)]"
+			/>
+			<div className="scanline pointer-events-none fixed inset-0 opacity-[0.35] dark:opacity-[0.2]" />
+
+			<div className="fixed top-0 right-0 left-0 z-100 flex justify-center px-3 pt-4 md:px-6">
+				<motion.nav
+					animate={{ opacity: 1, y: 0 }}
+					className="flex h-14 w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-border/60 bg-background/75 px-4 shadow-black/[0.04] shadow-lg backdrop-blur-2xl md:px-6 dark:border-border/50 dark:bg-background/55 dark:shadow-black/30"
+					initial={{ opacity: 0, y: -12 }}
+					transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
 				>
-					<motion.span
-						animate={{ opacity: 1, x: 0 }}
-						className="h-2 w-2 animate-pulse-dot rounded-full bg-[#00e5a0] shadow-[0_0_8px_#00e5a0]"
-						initial={{ opacity: 0, x: -16 }}
-						transition={{ duration: 0.5, ease: "easeOut" }}
-					/>
-					CodePulse
-				</Link>
+					<AppLogo href="/" />
 
-				<motion.ul
-					animate="visible"
-					className="hidden list-none items-center gap-8 md:flex"
-					initial="hidden"
-					variants={staggerContainer}
-				>
-					<motion.li custom={0} variants={fadeIn as unknown as Variants}>
-						<a
-							className="text-[13px] text-muted-foreground tracking-wide transition-colors hover:text-[#00e5a0]"
-							href="#features"
-						>
-							Features
-						</a>
-					</motion.li>
-					<motion.li custom={0.08} variants={fadeIn as unknown as Variants}>
-						<Link
-							className="text-[13px] text-muted-foreground tracking-wide transition-colors hover:text-[#00e5a0]"
-							href="/docs"
-						>
-							Docs
-						</Link>
-					</motion.li>
-				</motion.ul>
+					<motion.ul
+						animate="visible"
+						className="hidden list-none items-center gap-8 md:flex"
+						initial="hidden"
+						variants={staggerContainer}
+					>
+						<motion.li custom={0} variants={fadeIn as unknown as Variants}>
+							<a
+								className="text-[13px] text-muted-foreground tracking-wide transition-colors hover:text-brand"
+								href="#features"
+							>
+								Features
+							</a>
+						</motion.li>
+						<motion.li custom={0.08} variants={fadeIn as unknown as Variants}>
+							<Link
+								className="text-[13px] text-muted-foreground tracking-wide transition-colors hover:text-brand"
+								href="/docs"
+							>
+								Docs
+							</Link>
+						</motion.li>
+					</motion.ul>
 
-				<div className="flex items-center gap-2">
-					<ThemeToggle />
-					<NavAuthActions />
-				</div>
-			</motion.nav>
+					<div className="flex shrink-0 items-center gap-2">
+						<ThemeToggle />
+						<NavAuthActions />
+					</div>
+				</motion.nav>
+			</div>
 
-			<section className="relative mx-auto grid min-h-screen max-w-300 grid-cols-1 items-center gap-10 px-5 pt-24 pb-16 md:px-10 lg:grid-cols-2 lg:gap-16">
+			<section className="relative mx-auto grid min-h-screen max-w-300 grid-cols-1 items-center gap-10 px-5 pt-28 pb-20 md:px-10 lg:grid-cols-2 lg:gap-16">
 				<motion.div
 					className="hero-glow-radial pointer-events-none absolute top-[20%] -left-[10%] h-150 w-150 rounded-full"
 					style={{ y: heroGlowYSpring }}
@@ -292,16 +302,16 @@ export function LandingPageClient() {
 				<div className="relative z-10">
 					<motion.div
 						animate={{ opacity: 1, y: 0, scale: 1 }}
-						className="mb-7 inline-flex items-center gap-2 rounded border border-[#00e5a0]/30 bg-[#00e5a0]/10 px-3 py-1 text-[#00e5a0] text-[10px] uppercase tracking-widest md:text-[11px]"
+						className="mb-7 inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3 py-1.5 text-[10px] text-brand uppercase tracking-widest md:text-[11px]"
 						initial={{ opacity: 0, y: 16, scale: 0.95 }}
 						transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
 					>
-						<span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-[#00e5a0] shadow-[0_0_6px_#00e5a0]" />
+						<span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-brand shadow-brand/40 shadow-md" />
 						Now in public beta
 					</motion.div>
 					<motion.h1
 						animate={{ opacity: 1, y: 0 }}
-						className="mb-2 font-extrabold font-syne text-[clamp(2.4rem,5vw,3.6rem)] text-foreground leading-[1.05] tracking-tighter"
+						className="mb-2 font-display font-extrabold text-[clamp(2.4rem,5vw,3.6rem)] text-foreground leading-[1.05] tracking-tighter"
 						initial={{ opacity: 0, y: 24 }}
 						transition={{
 							duration: 0.65,
@@ -315,13 +325,13 @@ export function LandingPageClient() {
 					</motion.h1>
 					<motion.div
 						animate={{ opacity: 1 }}
-						className="mb-7 min-h-8 font-normal text-[#00e5a0] text-[clamp(1rem,2.5vw,1.4rem)]"
+						className="mb-7 min-h-8 font-mono font-normal text-[clamp(1rem,2.5vw,1.4rem)] text-brand"
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.4, delay: 0.5 }}
 					>
 						$ {typed}
 						<span
-							className="ml-0.5 inline-block h-[1.1em] w-0.75 bg-[#00e5a0] align-text-bottom"
+							className="ml-0.5 inline-block h-[1.1em] w-0.75 bg-brand align-text-bottom"
 							style={{
 								opacity: cursorVisible ? 1 : 0,
 								transition: "opacity 0.1s",
@@ -345,13 +355,13 @@ export function LandingPageClient() {
 						variants={staggerContainer}
 					>
 						<motion.div custom={0.4} variants={fadeUp as unknown as Variants}>
-							<SignInWithGitHubButton className="inline-flex items-center gap-2.5 rounded-md bg-white px-6 py-3 font-bold text-[#0a0c0f] text-[13px] shadow-none transition-all duration-150 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_6px_24px_rgba(255,255,255,0.15)] active:scale-[0.97] md:text-[14px]">
-								<Github className="h-5 w-5" />
+							<SignInWithGitHubButton className="inline-flex items-center gap-2.5 rounded-xl bg-brand px-6 py-3 font-semibold text-[13px] text-brand-foreground shadow-brand/25 shadow-lg transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand/90 hover:shadow-brand/20 hover:shadow-xl active:scale-[0.98] md:text-[14px]">
+								<Github className="h-5 w-5 text-brand-foreground" />
 								Continue with GitHub
 							</SignInWithGitHubButton>
 						</motion.div>
 						<motion.a
-							className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-6 py-3 text-[13px] text-muted-foreground transition-all hover:border-[#00e5a0] hover:text-[#00e5a0] md:text-[14px]"
+							className="inline-flex items-center gap-2 rounded-xl border border-border bg-background/50 px-6 py-3 text-[13px] text-muted-foreground transition-all hover:border-brand/40 hover:text-brand md:text-[14px]"
 							custom={0.5}
 							href="#features"
 							variants={fadeUp as unknown as Variants}
@@ -374,7 +384,7 @@ export function LandingPageClient() {
 					}}
 					whileHover={{ scale: 1.015, transition: { duration: 0.3 } }}
 				>
-					<div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_32px_64px_rgba(0,0,0,0.12)] dark:shadow-[0_0_0_1px_oklch(0.28_0.025_250),0_32px_64px_rgba(0,0,0,0.5),0_0_80px_rgba(0,229,160,0.04)]">
+					<div className="overflow-hidden rounded-2xl border border-border/80 bg-card/90 shadow-[0_32px_64px_rgba(0,0,0,0.1)] backdrop-blur-sm dark:shadow-[0_0_0_1px_oklch(0.28_0.025_250),0_32px_64px_rgba(0,0,0,0.45),0_0_80px_oklch(0.52_0.1_168_/_0.06)]">
 						<div className="flex items-center gap-2 border-border border-b bg-muted px-4 py-3">
 							<div className="flex gap-1.5">
 								<div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
@@ -406,7 +416,7 @@ export function LandingPageClient() {
 											<span
 												className={
 													line.type === "add"
-														? "text-[#00e5a0]"
+														? "text-brand"
 														: line.type === "del"
 															? "text-[#ff7b7b] line-through opacity-60"
 															: "text-muted-foreground"
@@ -424,11 +434,11 @@ export function LandingPageClient() {
 							</AnimatePresence>
 							<motion.div
 								animate={{ opacity: 1, y: 0 }}
-								className="mt-4 rounded-r-lg border-[#00e5a0] border-l-2 bg-[#00e5a0]/10 p-4 text-[12px] leading-relaxed"
+								className="mt-4 rounded-r-lg border-brand border-l-2 bg-brand/10 p-4 text-[12px] leading-relaxed"
 								initial={{ opacity: 0, y: 10 }}
 								transition={{ duration: 0.5, delay: 1.65, ease: "easeOut" }}
 							>
-								<div className="mb-1.5 font-bold text-[#00e5a0] text-[11px] uppercase tracking-widest">
+								<div className="mb-1.5 font-bold text-[11px] text-brand uppercase tracking-widest">
 									▸ CodePulse AI
 								</div>
 								<p className="text-foreground/90">
@@ -436,9 +446,7 @@ export function LandingPageClient() {
 									<code className="px-1 text-[#f5a623]">id</code> parameter was
 									interpolated directly into the URL, enabling path traversal.
 									Wrapping it with{" "}
-									<code className="px-1 text-[#00e5a0]">
-										encodeURIComponent()
-									</code>{" "}
+									<code className="px-1 text-brand">encodeURIComponent()</code>{" "}
 									sanitises the input.
 								</p>
 							</motion.div>
@@ -447,7 +455,7 @@ export function LandingPageClient() {
 				</motion.div>
 			</section>
 
-			<div className="flex flex-wrap justify-center gap-10 border-border border-y bg-muted/40 px-5 py-8 lg:gap-24">
+			<div className="flex flex-wrap justify-center gap-10 border-border/80 border-y bg-muted/30 px-5 py-10 lg:gap-24">
 				<StatItem label="Pull Requests Reviewed" num="12k+" />
 				<StatItem label="Teams Using CodePulse" num="340+" />
 				<StatItem label="Bug Detection Rate" num="94%" />
@@ -455,7 +463,7 @@ export function LandingPageClient() {
 
 			<section className="mx-auto max-w-275 px-5 py-24 md:px-10" id="features">
 				<motion.p
-					className="mb-3 text-[#00e5a0] text-[11px] uppercase tracking-[0.2em]"
+					className="mb-3 font-mono text-[11px] text-brand uppercase tracking-[0.2em]"
 					initial={{ opacity: 0, x: -12 }}
 					transition={{ duration: 0.4, ease: "easeOut" }}
 					viewport={{ once: true, margin: "-80px" }}
@@ -464,7 +472,7 @@ export function LandingPageClient() {
 					{"// why codepulse"}
 				</motion.p>
 				<motion.h2
-					className="mb-12 font-extrabold font-syne text-[clamp(1.8rem,4vw,2.5rem)] text-foreground tracking-tight"
+					className="mb-12 font-display font-extrabold text-[clamp(1.8rem,4vw,2.5rem)] text-foreground tracking-tight"
 					initial={{ opacity: 0, y: 20 }}
 					transition={{
 						duration: 0.55,
@@ -490,7 +498,7 @@ export function LandingPageClient() {
 			</section>
 
 			<motion.footer
-				className="flex flex-col items-center justify-between gap-4 border-border border-t px-5 py-8 text-[12px] text-muted-foreground md:flex-row md:px-10"
+				className="flex flex-col items-center justify-between gap-4 border-border/80 border-t px-5 py-10 text-[12px] text-muted-foreground md:flex-row md:px-10"
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5 }}
 				viewport={{ once: true }}
@@ -498,13 +506,10 @@ export function LandingPageClient() {
 			>
 				<span>© {new Date().getFullYear()} CodePulse</span>
 				<nav className="flex flex-wrap items-center justify-center gap-4">
-					<Link className="transition-colors hover:text-[#00e5a0]" href="/docs">
+					<Link className="transition-colors hover:text-brand" href="/docs">
 						Docs
 					</Link>
-					<Link
-						className="transition-colors hover:text-[#00e5a0]"
-						href="/signup"
-					>
+					<Link className="transition-colors hover:text-brand" href="/signup">
 						Sign up
 					</Link>
 				</nav>
@@ -527,10 +532,10 @@ function NavAuthActions() {
 	if (session?.user) {
 		return (
 			<Link
-				className="inline-flex items-center gap-2.5 rounded-md bg-white px-4 py-2 font-bold text-[#0a0c0f] text-[13px] transition-all hover:scale-105 hover:shadow-[0_4px_16px_rgba(255,255,255,0.12)] active:scale-[0.97]"
+				className="inline-flex items-center gap-2.5 rounded-xl bg-brand px-4 py-2 font-semibold text-[13px] text-brand-foreground shadow-brand/20 shadow-md transition-all hover:bg-brand/90 hover:shadow-lg active:scale-[0.98]"
 				href="/dashboard"
 			>
-				<LayoutDashboard className="h-4 w-4" />
+				<LayoutDashboard className="h-4 w-4 text-brand-foreground" />
 				Go to dashboard
 			</Link>
 		);
@@ -541,7 +546,7 @@ function NavAuthActions() {
 function SignInDropdown() {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger className="inline-flex items-center gap-2.5 rounded-md bg-white px-4 py-2 font-bold text-[#0a0c0f] text-[13px] transition-all hover:scale-105 active:scale-[0.97]">
+			<DropdownMenuTrigger className="inline-flex items-center gap-2.5 rounded-xl bg-brand px-4 py-2 font-semibold text-[13px] text-brand-foreground shadow-brand/20 shadow-md transition-all hover:bg-brand/90 active:scale-[0.98]">
 				<GithubIcon />
 				Sign in
 				<ChevronDown className="h-4 w-4 opacity-50" />
@@ -573,7 +578,10 @@ function SignInDropdown() {
 				<DropdownMenuSeparator className="my-1 h-px bg-border" />
 				<div className="px-3 py-2 text-center text-[10px] text-muted-foreground">
 					No account?{" "}
-					<Link className="text-[#00e5a0] hover:underline" href="/signup">
+					<Link
+						className="font-medium text-brand hover:underline"
+						href="/signup"
+					>
 						Sign up free
 					</Link>
 				</div>

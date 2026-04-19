@@ -88,10 +88,10 @@ function DashboardContent({
 	return (
 		<div className="flex min-h-screen bg-background font-sans text-foreground antialiased">
 			{/* Sidebar */}
-			<aside className="flex w-65 shrink-0 flex-col border-border border-r bg-card">
-				<div className="flex items-center justify-between gap-2 border-border border-b p-4">
+			<aside className="flex w-65 shrink-0 flex-col border-border/80 border-r bg-sidebar/95 backdrop-blur-sm">
+				<div className="flex items-center justify-between gap-2 border-border/80 border-b p-4">
 					<Link
-						className="flex items-center gap-2 text-[13px] text-muted-foreground transition-colors hover:text-primary"
+						className="flex items-center gap-2 text-[13px] text-muted-foreground transition-colors hover:text-brand"
 						href="/"
 					>
 						<ArrowLeft className="h-4 w-4 shrink-0" />
@@ -104,9 +104,9 @@ function DashboardContent({
 						Dashboard
 					</p>
 					<button
-						className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors ${
+						className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors ${
 							section === "repositories"
-								? "bg-primary/10 font-medium text-primary"
+								? "bg-brand/12 font-medium text-brand"
 								: "text-foreground hover:bg-accent"
 						}`}
 						onClick={() => setSection("repositories")}
@@ -116,9 +116,9 @@ function DashboardContent({
 						All repositories
 					</button>
 					<button
-						className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors ${
+						className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors ${
 							section === "reviews"
-								? "bg-primary/10 font-medium text-primary"
+								? "bg-brand/12 font-medium text-brand"
 								: "text-foreground hover:bg-accent"
 						}`}
 						onClick={() => setSection("reviews")}
@@ -128,9 +128,9 @@ function DashboardContent({
 						All PR reviews
 					</button>
 					<button
-						className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors ${
+						className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors ${
 							section === "include-repo"
-								? "bg-primary/10 font-medium text-primary"
+								? "bg-brand/12 font-medium text-brand"
 								: "text-foreground hover:bg-accent"
 						}`}
 						onClick={() => setSection("include-repo")}
@@ -140,9 +140,9 @@ function DashboardContent({
 						Add repository
 					</button>
 					<button
-						className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors ${
+						className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors ${
 							section === "new-review"
-								? "bg-primary/10 font-medium text-primary"
+								? "bg-brand/12 font-medium text-brand"
 								: "text-foreground hover:bg-accent"
 						}`}
 						onClick={() => setSection("new-review")}
@@ -169,12 +169,12 @@ function DashboardContent({
 
 			{/* Main content */}
 			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="flex h-14 items-center justify-between border-border border-b bg-background/95 px-5 backdrop-blur-xl md:px-10">
+				<header className="flex h-14 items-center justify-between border-border/80 border-b bg-background/90 px-5 backdrop-blur-xl md:px-10">
 					<div className="flex items-center gap-3">
-						<div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted">
-							<LayoutDashboard className="h-4 w-4 text-primary" />
+						<div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-muted/80">
+							<LayoutDashboard className="h-4 w-4 text-brand" />
 						</div>
-						<h1 className="font-semibold text-foreground text-lg tracking-tight">
+						<h1 className="font-display font-semibold text-foreground text-lg tracking-tight">
 							{section === "repositories" && "Repositories"}
 							{section === "reviews" && "PR reviews"}
 							{section === "include-repo" && "Add repository"}
@@ -1035,11 +1035,18 @@ function ReviewDetailPanel({
 	);
 	const [openaiKeyInput, setOpenaiKeyInput] = useState("");
 	const [geminiKeyInput, setGeminiKeyInput] = useState("");
+	const [postToGitHub, setPostToGitHub] = useState(false);
 
 	useEffect(() => {
 		if (aiUsage?.provider === "openai" || aiUsage?.provider === "gemini")
 			setProviderSelect(aiUsage.provider);
 	}, [aiUsage?.provider]);
+
+	useEffect(() => {
+		if (aiUsage?.postAiReviewToGitHub !== undefined) {
+			setPostToGitHub(aiUsage.postAiReviewToGitHub);
+		}
+	}, [aiUsage?.postAiReviewToGitHub]);
 
 	const setAiSettings = api.prReview.setAiReviewSettings.useMutation({
 		onSuccess: () => {
@@ -1067,7 +1074,7 @@ function ReviewDetailPanel({
 	});
 
 	const runAi = api.prReview.runAiReview.useMutation({
-		onSuccess: () => {
+		onSuccess: (data) => {
 			utils.prReview.getById.invalidate({ id: reviewId, userId });
 			utils.prReview.list.invalidate();
 			utils.prReview.listByRepositoryId.invalidate();
@@ -1075,6 +1082,9 @@ function ReviewDetailPanel({
 			utils.notification.list.invalidate();
 			utils.notification.unreadCount.invalidate();
 			toast.success("AI review completed.");
+			if (data?.githubSummaryPosted) {
+				toast.success("AI summary was posted on the GitHub pull request.");
+			}
 		},
 		onError: (e) => toast.error(e.message),
 	});
@@ -1290,6 +1300,29 @@ function ReviewDetailPanel({
 								value={geminiKeyInput}
 							/>
 						</div>
+						<div className="flex items-start gap-2 rounded-md border border-border/80 bg-background/50 p-3">
+							<input
+								checked={postToGitHub}
+								className="mt-1 h-4 w-4 shrink-0 rounded border-input"
+								id="post-to-github"
+								onChange={(e) => setPostToGitHub(e.target.checked)}
+								type="checkbox"
+							/>
+							<label
+								className="cursor-pointer text-[12px] text-muted-foreground leading-snug"
+								htmlFor="post-to-github"
+							>
+								<span className="font-medium text-foreground">
+									Post AI summary to GitHub
+								</span>
+								<br />
+								After each run, add the AI review as a comment on the PR
+								conversation (needs a linked repo or PR URL, and GitHub sign-in
+								with <code className="text-[11px] text-brand">repo</code>{" "}
+								access — sign out and sign in again if you enabled this after
+								upgrading).
+							</label>
+						</div>
 						<button
 							className="self-start rounded-md bg-muted px-3 py-1.5 font-medium text-[13px] text-foreground hover:bg-muted/80 disabled:opacity-50"
 							disabled={setAiSettings.isPending}
@@ -1299,6 +1332,7 @@ function ReviewDetailPanel({
 									provider: providerSelect,
 									openaiApiKey: openaiKeyInput.trim() || undefined,
 									geminiApiKey: geminiKeyInput.trim() || undefined,
+									postAiReviewToGitHub: postToGitHub,
 								})
 							}
 							type="button"

@@ -2,8 +2,20 @@ import { and, count, eq, like, or, type SQL } from "drizzle-orm";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { z } from "zod";
 import { runAiReview } from "~/server/ai-review";
+import {
+	createIssueComment,
+	formatCodePulseComment,
+	resolvePullRequestRef,
+	updateIssueComment,
+} from "~/server/github/post-pr-comment";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { notification, prReview, userSettings } from "~/server/db/schema";
+import {
+	account,
+	notification,
+	prReview,
+	repository,
+	userSettings,
+} from "~/server/db/schema";
 
 const statusEnum = z.enum(["pending", "in_progress", "completed", "failed"]);
 
@@ -213,6 +225,7 @@ export const prReviewRouter = createTRPCRouter({
 					aiProvider: userSettings.aiProvider,
 					openaiApiKey: userSettings.openaiApiKey,
 					geminiApiKey: userSettings.geminiApiKey,
+					postAiReviewToGitHub: userSettings.postAiReviewToGitHub,
 				})
 				.from(userSettings)
 				.where(eq(userSettings.userId, input.userId))
@@ -235,6 +248,7 @@ export const prReviewRouter = createTRPCRouter({
 				provider,
 				openaiConfigured: !!settings?.openaiApiKey?.trim(),
 				geminiConfigured: !!settings?.geminiApiKey?.trim(),
+				postAiReviewToGitHub: settings?.postAiReviewToGitHub ?? false,
 			};
 		}),
 
@@ -266,6 +280,7 @@ export const prReviewRouter = createTRPCRouter({
 				provider: z.enum(["openai", "gemini"]).optional(),
 				openaiApiKey: z.string().nullable().optional(),
 				geminiApiKey: z.string().nullable().optional(),
+				postAiReviewToGitHub: z.boolean().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -279,12 +294,15 @@ export const prReviewRouter = createTRPCRouter({
 				aiProvider: "openai" | "gemini";
 				openaiApiKey: string | null;
 				geminiApiKey: string | null;
+				postAiReviewToGitHub: boolean;
 			}> = {};
 			if (input.provider !== undefined) updates.aiProvider = input.provider;
 			if (input.openaiApiKey !== undefined)
 				updates.openaiApiKey = input.openaiApiKey?.trim() || null;
 			if (input.geminiApiKey !== undefined)
 				updates.geminiApiKey = input.geminiApiKey?.trim() || null;
+			if (input.postAiReviewToGitHub !== undefined)
+				updates.postAiReviewToGitHub = input.postAiReviewToGitHub;
 
 			if (Object.keys(updates).length === 0) return { ok: true };
 
@@ -294,6 +312,10 @@ export const prReviewRouter = createTRPCRouter({
 				aiProvider: updates.aiProvider ?? existing?.aiProvider ?? "openai",
 				openaiApiKey: updates.openaiApiKey ?? existing?.openaiApiKey ?? null,
 				geminiApiKey: updates.geminiApiKey ?? existing?.geminiApiKey ?? null,
+				postAiReviewToGitHub:
+					updates.postAiReviewToGitHub ??
+					existing?.postAiReviewToGitHub ??
+					false,
 			};
 
 			await ctx.db.insert(userSettings).values(merged).onConflictDoUpdate({
@@ -322,6 +344,7 @@ export const prReviewRouter = createTRPCRouter({
 					aiProvider: userSettings.aiProvider,
 					openaiApiKey: userSettings.openaiApiKey,
 					geminiApiKey: userSettings.geminiApiKey,
+					postAiReviewToGitHub: userSettings.postAiReviewToGitHub,
 				})
 				.from(userSettings)
 				.where(eq(userSettings.userId, input.userId))
@@ -364,12 +387,91 @@ export const prReviewRouter = createTRPCRouter({
 				},
 			);
 
+			let nextGithubCommentId = review.githubCommentId ?? null;
+			let githubSummaryPosted = false;
+
+			if (settings?.postAiReviewToGitHub) {
+				const [ghAccount] = await ctx.db
+					.select({ accessToken: account.accessToken })
+					.from(account)
+					.where(
+						and(
+							eq(account.userId, input.userId),
+							eq(account.providerId, "github"),
+						),
+					)
+					.limit(1);
+				const token = ghAccount?.accessToken?.trim() ?? null;
+
+				let repoRow: { owner: string; name: string } | null = null;
+				if (review.repositoryId) {
+					const [r] = await ctx.db
+						.select({
+							owner: repository.owner,
+							name: repository.name,
+						})
+						.from(repository)
+						.where(eq(repository.id, review.repositoryId))
+						.limit(1);
+					if (r) repoRow = r;
+				}
+
+				const ref = resolvePullRequestRef({
+					prNumber: review.prNumber,
+					repository: repoRow,
+					prUrl: review.prUrl,
+				});
+
+				if (token && ref) {
+					const body = formatCodePulseComment(aiReviewText);
+					if (nextGithubCommentId) {
+						const upd = await updateIssueComment(
+							ref,
+							nextGithubCommentId,
+							body,
+							token,
+						);
+						if (upd.ok) {
+							nextGithubCommentId = upd.commentId;
+							githubSummaryPosted = true;
+						} else if (upd.error === "not_found" || upd.status === 404) {
+							const created = await createIssueComment(ref, body, token);
+							if (created.ok) {
+								nextGithubCommentId = created.commentId;
+								githubSummaryPosted = true;
+							}
+						} else {
+							console.error(
+								"[CodePulse] GitHub comment update failed:",
+								upd.error,
+							);
+						}
+					} else {
+						const created = await createIssueComment(ref, body, token);
+						if (created.ok) {
+							nextGithubCommentId = created.commentId;
+							githubSummaryPosted = true;
+						} else {
+							console.error(
+								"[CodePulse] GitHub comment create failed:",
+								created.error,
+							);
+						}
+					}
+				} else {
+					console.warn(
+						"[CodePulse] Skipping GitHub post: missing token or repo/PR context (add repo + PR link, and sign in with GitHub).",
+					);
+				}
+			}
+
 			await ctx.db
 				.update(prReview)
 				.set({
 					status: "completed",
 					aiReview: aiReviewText,
 					summary: aiReviewText.slice(0, 500),
+					githubCommentId: nextGithubCommentId,
 				})
 				.where(
 					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
@@ -385,6 +487,10 @@ export const prReviewRouter = createTRPCRouter({
 				relatedId: input.id,
 			});
 
-			return { ok: true, aiReview: aiReviewText };
+			return {
+				ok: true,
+				aiReview: aiReviewText,
+				githubSummaryPosted,
+			};
 		}),
 });

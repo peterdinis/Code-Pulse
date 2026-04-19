@@ -10,8 +10,8 @@ export default function DocsError({
 	reset: () => void;
 }) {
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 font-mono text-foreground">
-			<h1 className="mb-2 font-bold font-sans text-foreground text-xl">
+		<div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 font-sans text-foreground">
+			<h1 className="mb-2 font-bold font-display text-foreground text-xl">
 				Something went wrong
 			</h1>
 			<p className="mb-4 max-w-md text-center text-[13px] text-muted-foreground">
@@ -19,14 +19,14 @@ export default function DocsError({
 			</p>
 			<div className="flex gap-3">
 				<button
-					className="rounded-lg border border-[#00e5a0]/40 bg-[#00e5a0]/20 px-4 py-2 font-medium text-[#00e5a0] text-[13px] hover:bg-[#00e5a0]/30"
+					className="rounded-xl border border-brand/40 bg-brand/15 px-4 py-2 font-medium text-[13px] text-brand hover:bg-brand/25"
 					onClick={reset}
 					type="button"
 				>
 					Try again
 				</button>
 				<Link
-					className="rounded-lg border border-border px-4 py-2 text-[13px] text-muted-foreground hover:border-[#00e5a0]/40 hover:text-[#00e5a0]"
+					className="rounded-xl border border-border px-4 py-2 text-[13px] text-muted-foreground hover:border-brand/40 hover:text-brand"
 					href="/"
 				>
 					Back to home

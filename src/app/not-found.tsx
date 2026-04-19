@@ -65,12 +65,12 @@ export default function NotFound() {
 			>
 				<motion.div
 					animate="animate"
-					className="absolute top-1/3 -left-1/4 h-96 w-96 rounded-full bg-[#00e5a0]/10 blur-3xl"
+					className="absolute top-1/3 -left-1/4 h-96 w-96 rounded-full bg-brand/12 blur-3xl"
 					variants={pulse as unknown as Variants}
 				/>
 				<motion.div
 					animate="animate"
-					className="absolute -right-1/4 bottom-1/3 h-80 w-80 rounded-full bg-[#00e5a0]/5 blur-3xl"
+					className="absolute -right-1/4 bottom-1/3 h-80 w-80 rounded-full bg-brand/10 blur-3xl"
 					style={{ transitionDelay: "0.5s" }}
 					variants={pulse as unknown as Variants}
 				/>
@@ -88,13 +88,13 @@ export default function NotFound() {
 					variants={item as unknown as Variants}
 				>
 					<motion.div animate="animate" variants={float as unknown as Variants}>
-						<SearchX className="size-12 text-[#00e5a0]" strokeWidth={1.5} />
+						<SearchX className="size-12 text-brand" strokeWidth={1.5} />
 					</motion.div>
 				</motion.div>
 
 				{/* 404 */}
 				<motion.h1
-					className="font-bold font-mono text-7xl text-foreground tracking-tighter sm:text-8xl"
+					className="font-bold font-display text-7xl text-foreground tracking-tighter sm:text-8xl"
 					variants={item as unknown as Variants}
 				>
 					404
@@ -117,9 +117,8 @@ export default function NotFound() {
 				<motion.div className="mt-10" variants={item as unknown as Variants}>
 					<Link
 						className={cn(
-							"inline-flex items-center gap-2 rounded-lg px-5 py-3 font-semibold text-sm",
-							"bg-[#00e5a0] text-black transition-colors hover:bg-[#00e5a0]/90",
-							"dark:bg-[#00e5a0] dark:text-black dark:hover:bg-[#00e5a0]/90",
+							"inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold text-sm",
+							"bg-brand text-brand-foreground shadow-brand/25 shadow-lg transition-colors hover:bg-brand/90",
 						)}
 						href="/"
 					>

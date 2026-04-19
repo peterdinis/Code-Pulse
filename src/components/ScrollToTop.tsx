@@ -35,7 +35,7 @@ export function ScrollToTop() {
 				<motion.button
 					animate={{ opacity: 1, scale: 1 }}
 					aria-label="Scroll to top"
-					className="fixed right-8 bottom-8 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 active:scale-95 md:h-14 md:w-14"
+					className="fixed right-8 bottom-8 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-brand/30 shadow-lg transition-transform hover:scale-110 hover:shadow-xl active:scale-95 md:h-14 md:w-14"
 					exit={{ opacity: 0, scale: 0.5 }}
 					initial={{ opacity: 0, scale: 0.5 }}
 					onClick={scrollToTop}

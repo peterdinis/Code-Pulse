@@ -155,6 +155,8 @@ export const prReview = pgTable(
 		summary: text("summary"),
 		diffText: text("diff_text"),
 		aiReview: text("ai_review"),
+		/** GitHub issue comment id when AI summary was posted to the PR conversation */
+		githubCommentId: text("github_comment_id"),
 		createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { mode: "date" })
 			.defaultNow()
@@ -178,6 +180,10 @@ export const userSettings = pgTable(prefix("user_settings"), {
 	openaiApiKey: text("openai_api_key"),
 	/** User's Google Gemini API key */
 	geminiApiKey: text("gemini_api_key"),
+	/** When true, post (or update) AI review text as a comment on the GitHub PR after each run */
+	postAiReviewToGitHub: boolean("post_ai_review_to_github")
+		.default(false)
+		.notNull(),
 	updatedAt: timestamp("updated_at", { mode: "date" })
 		.defaultNow()
 		.$onUpdate(() => new Date())

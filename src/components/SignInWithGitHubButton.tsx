@@ -33,6 +33,30 @@ type SignInWithGitHubButtonProps = {
 };
 
 /**
+ * better-auth uses @better-fetch/fetch, which returns `{ data: <json body>, error }`.
+ * OAuth redirect URL lives at `data.url`, not top-level `url`.
+ */
+function getOAuthRedirectUrl(result: unknown): string | undefined {
+	if (!result || typeof result !== "object") return;
+	const r = result as Record<string, unknown>;
+	const data = r.data;
+	if (data && typeof data === "object" && data !== null) {
+		const u = (data as Record<string, unknown>).url;
+		if (typeof u === "string" && u.length > 0) return u;
+	}
+	if (typeof r.url === "string" && r.url.length > 0) return r.url;
+	return;
+}
+
+function getFetchErrorMessage(result: unknown): string | undefined {
+	if (!result || typeof result !== "object") return;
+	const err = (result as Record<string, unknown>).error;
+	if (!err || typeof err !== "object") return;
+	const msg = (err as Record<string, unknown>).message;
+	return typeof msg === "string" ? msg : undefined;
+}
+
+/**
  * Button that starts GitHub OAuth sign-in via better-auth.
  * User is created/updated in the database and session is set on success.
  */
@@ -52,12 +76,15 @@ export function SignInWithGitHubButton({
 				provider: "github",
 				callbackURL: resolvedCallbackURL,
 			});
-			if (result && "url" in result && typeof result.url === "string") {
-				window.location.href = result.url;
+			const redirectUrl = getOAuthRedirectUrl(result);
+			if (redirectUrl) {
+				window.location.href = redirectUrl;
 				return;
 			}
+			const apiMessage = getFetchErrorMessage(result);
 			toast.error("Could not start sign-in", {
 				description:
+					apiMessage ??
 					"The server did not return a GitHub redirect. Check BETTER_AUTH_URL and the network tab.",
 			});
 			setIsLoading(false);

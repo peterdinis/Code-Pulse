@@ -1,6 +1,5 @@
-import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { MarketingHeader } from "~/components/layout/MarketingHeader";
 import { SignUpContent } from "./_components/SignUpContent";
 
 export const metadata: Metadata = {
@@ -16,25 +15,14 @@ export const metadata: Metadata = {
 
 export default function SignUpPage() {
 	return (
-		<div className="flex min-h-screen flex-col bg-background font-mono text-foreground antialiased">
-			<header className="sticky top-0 z-50 flex h-14 items-center justify-between border-border border-b bg-background/95 px-5 backdrop-blur-xl md:px-10">
-				<Link
-					className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition-colors hover:text-[#00e5a0]"
-					href="/"
-				>
-					<ArrowLeft className="h-4 w-4" />
-					Back
-				</Link>
-				<Link
-					className="flex items-center gap-2 font-extrabold font-sans text-[1.1rem] text-foreground tracking-tight"
-					href="/"
-				>
-					<span className="h-2 w-2 animate-pulse rounded-full bg-[#00e5a0]" />
-					CodePulse
-				</Link>
-			</header>
+		<div className="relative flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
+			<div
+				aria-hidden
+				className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-25%,var(--brand-muted),transparent_58%)]"
+			/>
+			<MarketingHeader backHref="/" backLabel="Back to home" />
 
-			<main className="flex flex-1 items-center justify-center px-5 py-16">
+			<main className="relative flex flex-1 items-center justify-center px-5 py-16">
 				<SignUpContent />
 			</main>
 		</div>
