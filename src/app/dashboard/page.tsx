@@ -1319,8 +1319,8 @@ function ReviewDetailPanel({
 								<br />
 								After each run, add the AI review as a comment on the PR
 								conversation (needs a linked repo or PR URL, and GitHub sign-in
-								with <code className="text-[11px] text-brand">repo</code>{" "}
-								access — sign out and sign in again if you enabled this after
+								with <code className="text-[11px] text-brand">repo</code> access
+								— sign out and sign in again if you enabled this after
 								upgrading).
 							</label>
 						</div>

@@ -2,12 +2,6 @@ import { and, count, eq, like, or, type SQL } from "drizzle-orm";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { z } from "zod";
 import { runAiReview } from "~/server/ai-review";
-import {
-	createIssueComment,
-	formatCodePulseComment,
-	resolvePullRequestRef,
-	updateIssueComment,
-} from "~/server/github/post-pr-comment";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
 	account,
@@ -16,6 +10,12 @@ import {
 	repository,
 	userSettings,
 } from "~/server/db/schema";
+import {
+	createIssueComment,
+	formatCodePulseComment,
+	resolvePullRequestRef,
+	updateIssueComment,
+} from "~/server/github/post-pr-comment";
 
 const statusEnum = z.enum(["pending", "in_progress", "completed", "failed"]);
 

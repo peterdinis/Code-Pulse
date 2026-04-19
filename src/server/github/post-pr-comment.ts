@@ -94,7 +94,8 @@ export async function createIssueComment(
 	}
 	const id = String((data as { id?: number }).id ?? "");
 	const htmlUrl = String((data as { html_url?: string }).html_url ?? "");
-	if (!id) return { ok: false, error: "Missing comment id from GitHub", status };
+	if (!id)
+		return { ok: false, error: "Missing comment id from GitHub", status };
 	return { ok: true, commentId: id, htmlUrl };
 }
 
