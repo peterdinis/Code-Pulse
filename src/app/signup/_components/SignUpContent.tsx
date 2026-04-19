@@ -8,7 +8,7 @@ function GithubIcon() {
 	return (
 		<svg
 			aria-label="GitHub"
-			className="h-5 w-5"
+			className="h-5 w-5 text-brand-foreground"
 			fill="currentColor"
 			role="img"
 			viewBox="0 0 24 24"
@@ -31,14 +31,14 @@ export function SignUpContent() {
 	if (session?.user) {
 		return (
 			<div className="max-w-md text-center">
-				<h1 className="mb-2 font-bold font-sans text-2xl text-foreground">
+				<h1 className="mb-2 font-bold font-display text-2xl text-foreground">
 					You’re signed in
 				</h1>
 				<p className="mb-6 text-muted-foreground text-sm">
 					Head to the dashboard to connect repositories and run AI reviews.
 				</p>
 				<Link
-					className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-bold text-[#0a0c0f] text-sm transition-opacity hover:opacity-90"
+					className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 font-semibold text-brand-foreground text-sm shadow-brand/20 shadow-md transition-opacity hover:opacity-95"
 					href="/dashboard"
 				>
 					Go to dashboard
@@ -49,20 +49,20 @@ export function SignUpContent() {
 
 	return (
 		<div className="w-full max-w-95 text-center">
-			<h1 className="mb-2 font-extrabold font-sans text-2xl text-foreground tracking-tight md:text-3xl">
+			<h1 className="mb-2 font-display font-extrabold text-2xl text-foreground tracking-tight md:text-3xl">
 				Create your account
 			</h1>
 			<p className="mb-8 text-muted-foreground text-sm">
 				Sign up with GitHub to start using CodePulse. Free for open-source; no
 				credit card required.
 			</p>
-			<SignInWithGitHubButton className="inline-flex w-full items-center justify-center gap-3 rounded-lg bg-white px-6 py-3.5 font-bold text-[#0a0c0f] text-sm transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]">
+			<SignInWithGitHubButton className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-brand px-6 py-3.5 font-semibold text-brand-foreground text-sm shadow-brand/25 shadow-lg transition-all hover:scale-[1.01] hover:bg-brand/90 hover:shadow-xl active:scale-[0.99]">
 				<GithubIcon />
 				Sign up with GitHub
 			</SignInWithGitHubButton>
 			<p className="mt-6 text-[12px] text-muted-foreground">
 				Already have an account?{" "}
-				<Link className="text-[#00e5a0] hover:underline" href="/">
+				<Link className="font-medium text-brand hover:underline" href="/">
 					Sign in on the home page
 				</Link>
 			</p>

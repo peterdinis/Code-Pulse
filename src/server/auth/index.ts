@@ -36,7 +36,8 @@ export const auth = betterAuth({
 			clientId: env.GITHUB_CLIENT_ID,
 			clientSecret: env.GITHUB_CLIENT_SECRET,
 			...githubRedirectOverride,
-			scope: ["user:email"],
+			/** `repo` is required to post AI summaries as PR comments via the GitHub API. */
+			scope: ["user:email", "repo"],
 			overrideUserInfoOnSignIn: true,
 			mapProfileToUser: (_profile) => ({
 				emailVerified: true,

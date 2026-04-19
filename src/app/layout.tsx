@@ -1,6 +1,6 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
-import { Geist, Inter } from "next/font/google";
+import { Geist, Inter, Syne } from "next/font/google";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { LoadingScreen } from "~/components/LoadingScreen";
@@ -24,12 +24,23 @@ const geist = Geist({
 	variable: "--font-geist-sans",
 });
 
+const fontDisplay = Syne({
+	subsets: ["latin"],
+	variable: "--font-syne",
+	weight: ["600", "700", "800"],
+});
+
 export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html
-			className={cn(geist.variable, "font-sans", inter.variable)}
+			className={cn(
+				geist.variable,
+				inter.variable,
+				fontDisplay.variable,
+				"font-sans",
+			)}
 			lang="en"
 			suppressHydrationWarning
 		>
