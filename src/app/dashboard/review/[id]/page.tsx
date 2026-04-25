@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, FileDiff, Sparkles, Trash2 } from "lucide-react";
+import {
+	ArrowLeft,
+	Download,
+	ExternalLink,
+	FileDiff,
+	Sparkles,
+	Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -94,6 +101,15 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 		},
 		onError: (e) => toast.error(e.message),
 	});
+	const syncDiffFromGitHub = api.prReview.syncDiffFromGitHub.useMutation({
+		onSuccess: (data) => {
+			const nextDiff = data?.diffText ?? "";
+			setDiffText(nextDiff);
+			utils.prReview.getById.invalidate({ id: reviewId, userId });
+			toast.success("Latest PR diff fetched from GitHub");
+		},
+		onError: (e) => toast.error(e.message),
+	});
 
 	const remove = api.prReview.remove.useMutation({
 		onSuccess: () => {
@@ -180,6 +196,17 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 						value={diffText}
 					/>
 					<div className="flex flex-wrap items-center gap-2">
+						<button
+							className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted/40 disabled:opacity-50"
+							disabled={syncDiffFromGitHub.isPending}
+							onClick={() => syncDiffFromGitHub.mutate({ id: reviewId, userId })}
+							type="button"
+						>
+							<Download className="h-4 w-4" />
+							{syncDiffFromGitHub.isPending
+								? "Fetching diff..."
+								: "Fetch PR diff now"}
+						</button>
 						<button
 							className="rounded-md bg-muted px-3 py-2 text-sm hover:bg-muted/80 disabled:opacity-50"
 							disabled={updateDiff.isPending || diffText === (review.diffText ?? "")}
