@@ -50,7 +50,7 @@ export default function RootLayout({
 						<Suspense fallback={<LoadingScreen label="Loading…" />}>
 							{children}
 						</Suspense>
-						<Toaster position="top-right" richColors />
+						<Toaster position="top-left" richColors />
 					</ThemeProvider>
 				</TRPCReactProvider>
 			</body>
