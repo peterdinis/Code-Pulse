@@ -60,4 +60,21 @@ export const notificationRouter = createTRPCRouter({
 				.where(eq(notification.userId, input.userId));
 			return { ok: true };
 		}),
+
+	removeById: publicProcedure.input(z.object({ id: z.string().min(1), userId: z.string().min(1) })).mutation(async ({ ctx, input }) => {
+		await ctx.db.delete(notification).where(
+			and(
+				eq(notification.id, input.id),
+				eq(notification.userId, input.userId),
+			),
+		);
+		return { ok: true };
+	}),
+
+	cleanAllNotifications: publicProcedure.input(z.object({ userId: z.string().min(1) })).mutation(async ({ ctx, input }) => {
+		await ctx.db.delete(notification).where(
+			eq(notification.userId, input.userId),
+		);
+		return { ok: true };
+	}),
 });
