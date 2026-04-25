@@ -217,6 +217,71 @@ export const prReviewRouter = createTRPCRouter({
 			return { ok: true };
 		}),
 
+	syncDiffFromGitHub: publicProcedure
+		.input(z.object({ id: z.string().min(1), userId: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			const [review] = await ctx.db
+				.select()
+				.from(prReview)
+				.where(
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
+				)
+				.limit(1);
+			if (!review) throw new Error("Review not found");
+
+			const [ghAccount] = await ctx.db
+				.select({ accessToken: account.accessToken })
+				.from(account)
+				.where(
+					and(
+						eq(account.userId, input.userId),
+						eq(account.providerId, "github"),
+					),
+				)
+				.limit(1);
+			const githubToken = ghAccount?.accessToken?.trim() ?? null;
+
+			let repoRow: { owner: string; name: string } | null = null;
+			if (review.repositoryId) {
+				const [r] = await ctx.db
+					.select({
+						owner: repository.owner,
+						name: repository.name,
+					})
+					.from(repository)
+					.where(eq(repository.id, review.repositoryId))
+					.limit(1);
+				if (r) repoRow = r;
+			}
+
+			const pullRequestRef = resolvePullRequestRef({
+				prNumber: review.prNumber,
+				repository: repoRow,
+				prUrl: review.prUrl,
+			});
+			if (!pullRequestRef) {
+				throw new Error(
+					"Missing PR context. Add repository or valid GitHub PR URL first.",
+				);
+			}
+
+			const diffResult = await fetchPullRequestDiff(pullRequestRef, githubToken);
+			if (!diffResult.ok) {
+				throw new Error(
+					`GitHub diff fetch failed${diffResult.status ? ` (${diffResult.status})` : ""}: ${diffResult.error}`,
+				);
+			}
+
+			await ctx.db
+				.update(prReview)
+				.set({ diffText: diffResult.diff })
+				.where(
+					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
+				);
+
+			return { ok: true, diffText: diffResult.diff };
+		}),
+
 	getAiReviewUsage: publicProcedure
 		.input(z.object({ userId: z.string().min(1) }))
 		.query(async ({ ctx, input }) => {

@@ -1,7 +1,7 @@
 "use client";
 
 type DiffLine = {
-	type: "add" | "remove" | "context";
+	type: "add" | "remove" | "context" | "file";
 	text: string;
 	rowId: number;
 };
@@ -9,6 +9,11 @@ type DiffLine = {
 function parseDiff(raw: string): DiffLine[] {
 	if (!raw.trim()) return [];
 	return raw.split("\n").map((line, rowId) => {
+		if (line.startsWith("diff --git ")) {
+			const parts = line.split(" ");
+			const right = parts[3]?.replace(/^b\//, "") ?? line;
+			return { type: "file", text: right, rowId };
+		}
 		if (line.startsWith("+") && !line.startsWith("+++")) {
 			return { type: "add", text: line.slice(1) || " ", rowId };
 		}
@@ -44,23 +49,32 @@ export function DiffViewer({
 		>
 			<div className="min-w-max">
 				{lines.map((line) => (
-					<div
-						className={`flex border-(--code-border)/50 border-b last:border-b-0 ${
-							line.type === "add"
-								? "diff-add"
-								: line.type === "remove"
-									? "diff-remove"
-									: "diff-context bg-transparent"
-						}`}
-						key={line.rowId}
-					>
-						<span className="w-8 shrink-0 select-none border-(--code-border)/50 border-r py-0.5 pr-2 text-right opacity-60">
-							{line.type === "add" ? "+" : line.type === "remove" ? "-" : " "}
-						</span>
-						<span className="whitespace-pre-wrap break-all py-0.5 pl-2">
-							{line.text || " "}
-						</span>
-					</div>
+					line.type === "file" ? (
+						<div
+							className="border-(--code-border)/50 border-y bg-muted/40 px-3 py-1.5 font-semibold text-primary text-xs"
+							key={line.rowId}
+						>
+							{line.text}
+						</div>
+					) : (
+						<div
+							className={`flex border-(--code-border)/50 border-b last:border-b-0 ${
+								line.type === "add"
+									? "diff-add"
+									: line.type === "remove"
+										? "diff-remove"
+										: "diff-context bg-transparent"
+							}`}
+							key={line.rowId}
+						>
+							<span className="w-8 shrink-0 select-none border-(--code-border)/50 border-r py-0.5 pr-2 text-right opacity-60">
+								{line.type === "add" ? "+" : line.type === "remove" ? "-" : " "}
+							</span>
+							<span className="whitespace-pre-wrap break-all py-0.5 pl-2">
+								{line.text || " "}
+							</span>
+						</div>
+					)
 				))}
 			</div>
 		</div>
