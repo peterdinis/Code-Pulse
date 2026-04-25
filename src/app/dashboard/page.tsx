@@ -164,7 +164,7 @@ function DashboardContent({
 
 			{/* Main content */}
 			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="flex h-14 items-center justify-between border-border/80 border-b bg-background/90 px-5 backdrop-blur-xl md:px-10">
+				<header className="z-20 flex h-14 items-center justify-between border-border/80 border-b bg-background/90 px-5 backdrop-blur-xl md:px-10">
 					<div className="flex items-center gap-3">
 						<div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-muted/80">
 							<LayoutDashboard className="h-4 w-4 text-brand" />
