@@ -45,10 +45,8 @@ function RedirectToHome() {
 }
 
 export default function DashboardPage() {
-	const _router = useRouter();
 	const { data: session, isPending } = useSession();
 	const [section, setSection] = useState<DashboardSection>("repositories");
-	const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
 	return (
 		<ClientOnly fallback={<LoadingScreen label="Loading dashboard…" />}>
@@ -59,10 +57,8 @@ export default function DashboardPage() {
 			) : (
 				<DashboardContent
 					section={section}
-					selectedReviewId={selectedReviewId}
 					session={session}
 					setSection={setSection}
-					setSelectedReviewId={setSelectedReviewId}
 					userId={session.user.id}
 				/>
 			)}
@@ -74,17 +70,16 @@ function DashboardContent({
 	userId,
 	section,
 	setSection,
-	selectedReviewId,
-	setSelectedReviewId,
 	session,
 }: {
 	userId: string;
 	section: DashboardSection;
 	setSection: (s: DashboardSection) => void;
-	selectedReviewId: string | null;
-	setSelectedReviewId: (id: string | null) => void;
 	session: { user: { email?: string | null } };
 }) {
+	const router = useRouter();
+	const openReviewPage = (id: string) => router.push(`/dashboard/review/${id}`);
+
 	return (
 		<div className="flex min-h-screen bg-background font-sans text-foreground antialiased">
 			{/* Sidebar */}
@@ -185,23 +180,15 @@ function DashboardContent({
 				</header>
 
 				<main className="relative flex-1 overflow-auto p-6 md:p-10">
-					{selectedReviewId && (
-						<ReviewDetailPanel
-							onClose={() => setSelectedReviewId(null)}
-							reviewId={selectedReviewId}
-							userId={userId}
-						/>
-					)}
 					{section === "repositories" && (
 						<RepositoriesSection
-							onSelectReview={setSelectedReviewId}
+							onSelectReview={openReviewPage}
 							userId={userId}
 						/>
 					)}
 					{section === "reviews" && (
 						<ReviewsSection
-							onSelectReview={setSelectedReviewId}
-							selectedReviewId={selectedReviewId}
+							onSelectReview={openReviewPage}
 							userId={userId}
 						/>
 					)}
@@ -213,10 +200,7 @@ function DashboardContent({
 					)}
 					{section === "new-review" && (
 						<NewReviewSection
-							onCreated={(id) => {
-								setSection("reviews");
-								setSelectedReviewId(id);
-							}}
+							onCreated={(id) => openReviewPage(id)}
 							userId={userId}
 						/>
 					)}
@@ -561,12 +545,10 @@ const REVIEW_STATUS_OPTIONS = [
 
 function ReviewsSection({
 	userId,
-	selectedReviewId,
 	onSelectReview,
 }: {
 	userId: string;
-	selectedReviewId: string | null;
-	onSelectReview: (id: string | null) => void;
+	onSelectReview: (id: string) => void;
 }) {
 	const [status, setStatus] = useState<string>("");
 	const [search, setSearch] = useState("");
@@ -575,12 +557,9 @@ function ReviewsSection({
 
 	const utils = api.useUtils();
 	const remove = api.prReview.remove.useMutation({
-		onSuccess: (_data, variables) => {
+		onSuccess: () => {
 			utils.prReview.list.invalidate();
 			utils.prReview.listByRepositoryId.invalidate();
-			if (variables.id === selectedReviewId) {
-				onSelectReview(null);
-			}
 			toast.success("PR review removed");
 		},
 		onError: (err) => toast.error(err.message ?? "Failed to remove PR review"),
@@ -841,7 +820,7 @@ function NewReviewSection({
 	onCreated: (id: string) => void;
 }) {
 	const { data: reposData } = api.repository.list.useQuery(
-		{ userId, pageSize: 100 },
+		{ userId, pageSize: 50 },
 		{ staleTime: 2 * 60 * 1000, gcTime: 5 * 60 * 1000, throwOnError: true },
 	);
 	const repos = reposData?.items ?? [];
@@ -1036,6 +1015,7 @@ function ReviewDetailPanel({
 	const [openaiKeyInput, setOpenaiKeyInput] = useState("");
 	const [geminiKeyInput, setGeminiKeyInput] = useState("");
 	const [postToGitHub, setPostToGitHub] = useState(false);
+	const [autoFetchFromGitHub, setAutoFetchFromGitHub] = useState(true);
 
 	useEffect(() => {
 		if (aiUsage?.provider === "openai" || aiUsage?.provider === "gemini")
@@ -1081,10 +1061,11 @@ function ReviewDetailPanel({
 			utils.prReview.getAiReviewUsage.invalidate({ userId });
 			utils.notification.list.invalidate();
 			utils.notification.unreadCount.invalidate();
+			const base = data?.githubSummaryPosted
+				? "AI review completed and posted on the GitHub PR."
+				: "AI review completed.";
 			toast.success(
-				data?.githubSummaryPosted
-					? "AI review completed and posted on the GitHub PR."
-					: "AI review completed.",
+				data?.githubDiffFetched ? `${base} Latest GitHub diff synced.` : base,
 			);
 		},
 		onError: (e) => toast.error(e.message),
@@ -1233,6 +1214,26 @@ function ReviewDetailPanel({
 						Run AI analysis on the diff. You’ll get a notification when it’s
 						done.
 					</p>
+					<div className="flex items-start gap-2 rounded-md border border-border/80 bg-background/50 p-3">
+						<input
+							checked={autoFetchFromGitHub}
+							className="mt-1 h-4 w-4 shrink-0 rounded border-input"
+							id="auto-fetch-diff"
+							onChange={(e) => setAutoFetchFromGitHub(e.target.checked)}
+							type="checkbox"
+						/>
+						<label
+							className="cursor-pointer text-[12px] text-muted-foreground leading-snug"
+							htmlFor="auto-fetch-diff"
+						>
+							<span className="font-medium text-foreground">
+								Auto-fetch latest PR diff from GitHub
+							</span>
+							<br />
+							When enabled, Run AI review first tries GitHub (using linked repo
+							or PR URL). If fetch fails, your saved/manual diff is used.
+						</label>
+					</div>
 					{/* AI provider & API keys */}
 					<div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
 						<p className="font-medium text-[12px] text-foreground">
@@ -1416,7 +1417,13 @@ function ReviewDetailPanel({
 								aiUsage.limit != null &&
 								aiUsage.used >= aiUsage.limit)
 						}
-						onClick={() => runAi.mutate({ id: reviewId, userId })}
+						onClick={() =>
+							runAi.mutate({
+								id: reviewId,
+								userId,
+								refreshFromGitHub: autoFetchFromGitHub,
+							})
+						}
 						type="button"
 					>
 						<Sparkles className="h-4 w-4" />

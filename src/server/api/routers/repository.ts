@@ -88,7 +88,6 @@ export const repositoryRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			revalidateTag("repository-list");
 			const id = crypto.randomUUID();
 			await ctx.db.insert(repository).values({
 				id,
@@ -100,18 +99,19 @@ export const repositoryRouter = createTRPCRouter({
 				githubRepoId: input.githubRepoId ?? null,
 				defaultBranch: input.defaultBranch ?? null,
 			});
+			revalidateTag("repository-list");
 			return { id };
 		}),
 
 	remove: publicProcedure
 		.input(z.object({ id: idSchema, userId: z.string().min(1) }))
 		.mutation(async ({ ctx, input }) => {
-			revalidateTag("repository-list");
 			await ctx.db
 				.delete(repository)
 				.where(
 					and(eq(repository.id, input.id), eq(repository.userId, input.userId)),
 				);
+			revalidateTag("repository-list");
 			return { ok: true };
 		}),
 });

@@ -12,6 +12,7 @@ import {
 } from "~/server/db/schema";
 import {
 	createIssueComment,
+	fetchPullRequestDiff,
 	formatCodePulseComment,
 	resolvePullRequestRef,
 	updateIssueComment,
@@ -326,7 +327,13 @@ export const prReviewRouter = createTRPCRouter({
 		}),
 
 	runAiReview: publicProcedure
-		.input(z.object({ id: z.string().min(1), userId: z.string().min(1) }))
+		.input(
+			z.object({
+				id: z.string().min(1),
+				userId: z.string().min(1),
+				refreshFromGitHub: z.boolean().optional().default(true),
+			}),
+		)
 		.mutation(async ({ ctx, input }) => {
 			revalidateTag("pr-review-list");
 			const [review] = await ctx.db
@@ -373,12 +380,59 @@ export const prReviewRouter = createTRPCRouter({
 					and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
 				);
 
+			const [ghAccount] = await ctx.db
+				.select({ accessToken: account.accessToken })
+				.from(account)
+				.where(
+					and(
+						eq(account.userId, input.userId),
+						eq(account.providerId, "github"),
+					),
+				)
+				.limit(1);
+			const githubToken = ghAccount?.accessToken?.trim() ?? null;
+
+			let repoRow: { owner: string; name: string } | null = null;
+			if (review.repositoryId) {
+				const [r] = await ctx.db
+					.select({
+						owner: repository.owner,
+						name: repository.name,
+					})
+					.from(repository)
+					.where(eq(repository.id, review.repositoryId))
+					.limit(1);
+				if (r) repoRow = r;
+			}
+
+			const pullRequestRef = resolvePullRequestRef({
+				prNumber: review.prNumber,
+				repository: repoRow,
+				prUrl: review.prUrl,
+			});
+
+			let diffText = review.diffText;
+			let githubDiffFetched = false;
+			if (input.refreshFromGitHub && pullRequestRef) {
+				const diffResult = await fetchPullRequestDiff(pullRequestRef, githubToken);
+				if (diffResult.ok) {
+					diffText = diffResult.diff;
+					githubDiffFetched = true;
+					await ctx.db
+						.update(prReview)
+						.set({ diffText: diffResult.diff })
+						.where(
+							and(eq(prReview.id, input.id), eq(prReview.userId, input.userId)),
+						);
+				}
+			}
+
 			const provider = settings?.aiProvider === "gemini" ? "gemini" : "openai";
 			const aiReviewText = await runAiReview(
 				{
 					prTitle: review.prTitle,
 					prNumber: review.prNumber,
-					diffText: review.diffText,
+					diffText,
 				},
 				{
 					provider,
@@ -391,51 +445,24 @@ export const prReviewRouter = createTRPCRouter({
 			let githubSummaryPosted = false;
 
 			if (settings?.postAiReviewToGitHub) {
-				const [ghAccount] = await ctx.db
-					.select({ accessToken: account.accessToken })
-					.from(account)
-					.where(
-						and(
-							eq(account.userId, input.userId),
-							eq(account.providerId, "github"),
-						),
-					)
-					.limit(1);
-				const token = ghAccount?.accessToken?.trim() ?? null;
-
-				let repoRow: { owner: string; name: string } | null = null;
-				if (review.repositoryId) {
-					const [r] = await ctx.db
-						.select({
-							owner: repository.owner,
-							name: repository.name,
-						})
-						.from(repository)
-						.where(eq(repository.id, review.repositoryId))
-						.limit(1);
-					if (r) repoRow = r;
-				}
-
-				const ref = resolvePullRequestRef({
-					prNumber: review.prNumber,
-					repository: repoRow,
-					prUrl: review.prUrl,
-				});
-
-				if (token && ref) {
+				if (githubToken && pullRequestRef) {
 					const body = formatCodePulseComment(aiReviewText);
 					if (nextGithubCommentId) {
 						const upd = await updateIssueComment(
-							ref,
+							pullRequestRef,
 							nextGithubCommentId,
 							body,
-							token,
+							githubToken,
 						);
 						if (upd.ok) {
 							nextGithubCommentId = upd.commentId;
 							githubSummaryPosted = true;
 						} else if (upd.error === "not_found" || upd.status === 404) {
-							const created = await createIssueComment(ref, body, token);
+							const created = await createIssueComment(
+								pullRequestRef,
+								body,
+								githubToken,
+							);
 							if (created.ok) {
 								nextGithubCommentId = created.commentId;
 								githubSummaryPosted = true;
@@ -447,7 +474,11 @@ export const prReviewRouter = createTRPCRouter({
 							);
 						}
 					} else {
-						const created = await createIssueComment(ref, body, token);
+						const created = await createIssueComment(
+							pullRequestRef,
+							body,
+							githubToken,
+						);
 						if (created.ok) {
 							nextGithubCommentId = created.commentId;
 							githubSummaryPosted = true;
@@ -491,6 +522,7 @@ export const prReviewRouter = createTRPCRouter({
 				ok: true,
 				aiReview: aiReviewText,
 				githubSummaryPosted,
+				githubDiffFetched,
 			};
 		}),
 });

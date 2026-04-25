@@ -155,3 +155,43 @@ export async function updateIssueComment(
 	const htmlUrl = String((data as { html_url?: string }).html_url ?? "");
 	return { ok: true, commentId: id, htmlUrl };
 }
+
+type FetchDiffResult =
+	| { ok: true; diff: string }
+	| { ok: false; error: string; status?: number };
+
+/**
+ * Fetch the latest PR diff from GitHub.
+ * Uses the same endpoint as PR detail with diff media type.
+ */
+export async function fetchPullRequestDiff(
+	ref: GithubRepoRef,
+	accessToken?: string | null,
+): Promise<FetchDiffResult> {
+	const url = `${GITHUB_API}/repos/${ref.owner}/${ref.repo}/pulls/${ref.prNumber}`;
+	const res = await fetch(url, {
+		method: "GET",
+		headers: {
+			Accept: "application/vnd.github.v3.diff",
+			"X-GitHub-Api-Version": "2022-11-28",
+			...(accessToken
+				? { Authorization: `Bearer ${accessToken.trim()}` }
+				: undefined),
+		},
+	});
+
+	if (!res.ok) {
+		const text = (await res.text()).trim();
+		return {
+			ok: false,
+			error: text || `GitHub API error (${res.status})`,
+			status: res.status,
+		};
+	}
+
+	const diff = await res.text();
+	if (!diff.trim()) {
+		return { ok: false, error: "Empty diff returned from GitHub" };
+	}
+	return { ok: true, diff };
+}
