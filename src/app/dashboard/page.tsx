@@ -187,10 +187,7 @@ function DashboardContent({
 						/>
 					)}
 					{section === "reviews" && (
-						<ReviewsSection
-							onSelectReview={openReviewPage}
-							userId={userId}
-						/>
+						<ReviewsSection onSelectReview={openReviewPage} userId={userId} />
 					)}
 					{section === "include-repo" && (
 						<IncludeRepositorySection

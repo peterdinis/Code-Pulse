@@ -265,7 +265,10 @@ export const prReviewRouter = createTRPCRouter({
 				);
 			}
 
-			const diffResult = await fetchPullRequestDiff(pullRequestRef, githubToken);
+			const diffResult = await fetchPullRequestDiff(
+				pullRequestRef,
+				githubToken,
+			);
 			if (!diffResult.ok) {
 				throw new Error(
 					`GitHub diff fetch failed${diffResult.status ? ` (${diffResult.status})` : ""}: ${diffResult.error}`,
@@ -479,7 +482,10 @@ export const prReviewRouter = createTRPCRouter({
 			let diffText = review.diffText;
 			let githubDiffFetched = false;
 			if (input.refreshFromGitHub && pullRequestRef) {
-				const diffResult = await fetchPullRequestDiff(pullRequestRef, githubToken);
+				const diffResult = await fetchPullRequestDiff(
+					pullRequestRef,
+					githubToken,
+				);
 				if (diffResult.ok) {
 					diffText = diffResult.diff;
 					githubDiffFetched = true;
