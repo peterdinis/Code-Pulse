@@ -48,7 +48,7 @@ export function DiffViewer({
 			className={`diff-theme overflow-x-auto rounded-lg font-mono text-[13px] leading-relaxed ${className ?? ""}`}
 		>
 			<div className="min-w-max">
-				{lines.map((line) => (
+				{lines.map((line) =>
 					line.type === "file" ? (
 						<div
 							className="border-(--code-border)/50 border-y bg-muted/40 px-3 py-1.5 font-semibold text-primary text-xs"
@@ -74,8 +74,8 @@ export function DiffViewer({
 								{line.text || " "}
 							</span>
 						</div>
-					)
-				))}
+					),
+				)}
 			</div>
 		</div>
 	);

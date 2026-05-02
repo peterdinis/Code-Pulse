@@ -31,7 +31,13 @@ export default function ReviewWorkspacePage() {
 	return <ReviewWorkspace reviewId={reviewId} userId={session.user.id} />;
 }
 
-function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: string }) {
+function ReviewWorkspace({
+	reviewId,
+	userId,
+}: {
+	reviewId: string;
+	userId: string;
+}) {
 	const router = useRouter();
 	const { data: review, isLoading } = api.prReview.getById.useQuery(
 		{ id: reviewId, userId },
@@ -44,7 +50,9 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 	const utils = api.useUtils();
 
 	const [diffText, setDiffText] = useState("");
-	const [providerSelect, setProviderSelect] = useState<"openai" | "gemini">("openai");
+	const [providerSelect, setProviderSelect] = useState<"openai" | "gemini">(
+		"openai",
+	);
 	const [openaiKeyInput, setOpenaiKeyInput] = useState("");
 	const [geminiKeyInput, setGeminiKeyInput] = useState("");
 	const [postToGitHub, setPostToGitHub] = useState(false);
@@ -126,14 +134,15 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 		return `PR #${review.prNumber}${review.prTitle ? ` - ${review.prTitle}` : ""}`;
 	}, [review]);
 
-	if (isLoading || !review) return <LoadingScreen label="Loading review workspace..." />;
+	if (isLoading || !review)
+		return <LoadingScreen label="Loading review workspace..." />;
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
 			<header className="flex h-14 items-center justify-between border-border/80 border-b px-5 md:px-8">
 				<div className="flex items-center gap-3">
 					<Link
-						className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+						className="inline-flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground"
 						href="/dashboard"
 					>
 						<ArrowLeft className="h-4 w-4" />
@@ -151,12 +160,13 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 						<div>
 							<p className="font-medium text-sm">Diff & source</p>
 							<p className="text-muted-foreground text-xs">
-								Paste manually, or let review auto-fetch latest PR diff from GitHub.
+								Paste manually, or let review auto-fetch latest PR diff from
+								GitHub.
 							</p>
 						</div>
 						{review.prUrl && (
 							<a
-								className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+								className="inline-flex items-center gap-1 text-primary text-xs hover:underline"
 								href={review.prUrl}
 								rel="noopener noreferrer"
 								target="_blank"
@@ -199,7 +209,9 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 						<button
 							className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted/40 disabled:opacity-50"
 							disabled={syncDiffFromGitHub.isPending}
-							onClick={() => syncDiffFromGitHub.mutate({ id: reviewId, userId })}
+							onClick={() =>
+								syncDiffFromGitHub.mutate({ id: reviewId, userId })
+							}
 							type="button"
 						>
 							<Download className="h-4 w-4" />
@@ -209,8 +221,12 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 						</button>
 						<button
 							className="rounded-md bg-muted px-3 py-2 text-sm hover:bg-muted/80 disabled:opacity-50"
-							disabled={updateDiff.isPending || diffText === (review.diffText ?? "")}
-							onClick={() => updateDiff.mutate({ id: reviewId, userId, diffText })}
+							disabled={
+								updateDiff.isPending || diffText === (review.diffText ?? "")
+							}
+							onClick={() =>
+								updateDiff.mutate({ id: reviewId, userId, diffText })
+							}
 							type="button"
 						>
 							{updateDiff.isPending ? "Saving..." : "Save diff"}
@@ -247,7 +263,10 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 								<FileDiff className="h-3.5 w-3.5" />
 								Diff preview
 							</div>
-							<DiffViewer className="max-h-72 overflow-y-auto" content={diffText} />
+							<DiffViewer
+								className="max-h-72 overflow-y-auto"
+								content={diffText}
+							/>
 						</div>
 					)}
 				</section>
@@ -261,7 +280,10 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 					</div>
 
 					<div className="space-y-2">
-						<label className="block text-xs text-muted-foreground" htmlFor="provider">
+						<label
+							className="block text-muted-foreground text-xs"
+							htmlFor="provider"
+						>
 							AI provider
 						</label>
 						<select
@@ -279,7 +301,7 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 
 					<div className="space-y-2">
 						<label
-							className="block text-xs text-muted-foreground"
+							className="block text-muted-foreground text-xs"
 							htmlFor="openai-key"
 						>
 							OpenAI API key
@@ -297,7 +319,7 @@ function ReviewWorkspace({ reviewId, userId }: { reviewId: string; userId: strin
 
 					<div className="space-y-2">
 						<label
-							className="block text-xs text-muted-foreground"
+							className="block text-muted-foreground text-xs"
 							htmlFor="gemini-key"
 						>
 							Gemini API key
